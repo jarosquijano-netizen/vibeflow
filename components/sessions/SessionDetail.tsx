@@ -1,0 +1,918 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import type { VibeSession, BacklogItem } from '@/types';
+import BacklogItemRow, { BACKLOG_STATUS_CONFIG } from './BacklogItemRow';
+
+/* ------------------------------------------------------------------ */
+/*  Config                                                              */
+/* ------------------------------------------------------------------ */
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  IDEA:        { label: 'IDEA',        color: '#94A3B8', bg: '#F1F5F9' },
+  SCOPING:     { label: 'SCOPING',     color: '#7C3AED', bg: '#EDE9FE' },
+  PROTOTYPING: { label: 'PROTOTYPING', color: '#2563EB', bg: '#DBEAFE' },
+  BUILDING:    { label: 'BUILDING',    color: '#D97706', bg: '#FEF3C7' },
+  DONE:        { label: 'DONE',        color: '#16A34A', bg: '#DCFCE7' },
+  PARKED:      { label: 'PARKED',      color: '#DC2626', bg: '#FEE2E2' },
+};
+
+const SIZE_CONFIG: Record<string, { color: string }> = {
+  XS: { color: '#64748B' },
+  S:  { color: '#16A34A' },
+  M:  { color: '#2563EB' },
+  L:  { color: '#D97706' },
+  XL: { color: '#DC2626' },
+};
+
+const TOOL_CONFIG: Record<string, { color: string }> = {
+  v0:      { color: '#000000' },
+  Cursor:  { color: '#2563EB' },
+  Bolt:    { color: '#D97706' },
+  ChatGPT: { color: '#10A37F' },
+  Claude:  { color: '#D4762A' },
+  Other:   { color: '#64748B' },
+};
+
+/* Inline reference data for feature and prompt lookups */
+const FEATURES_LOOKUP: Record<string, { title: string; status: string; size: string | null }> = {
+  f1:  { title: 'Carrier rate comparison',     status: 'BUILDING',     size: 'L' },
+  f4:  { title: 'CO2 emissions report',        status: 'IDEA',         size: 'S' },
+  f5:  { title: 'Customs doc generator',       status: 'BUILDING',     size: 'XL' },
+  f6:  { title: 'Real-time tracking webhooks', status: 'DONE',         size: 'M' },
+  f7:  { title: 'Multi-currency rate cards',   status: 'SCOPING',      size: 'L' },
+  f10: { title: 'Lane performance dashboard',  status: 'PROTOTYPING',  size: 'M' },
+  f12: { title: 'Spot rate request flow',      status: 'IDEA',         size: null },
+};
+
+const PROMPTS_LOOKUP: Record<string, { title: string; tool: string; quality: number }> = {
+  p1: { title: 'Rate card comparison table',          tool: 'v0',     quality: 5 },
+  p3: { title: 'Customs document form validation',    tool: 'Claude', quality: 3 },
+  p4: { title: 'CO2 emissions calculator hook',       tool: 'Cursor', quality: 5 },
+  p7: { title: 'Lane performance recharts dashboard', tool: 'v0',     quality: 4 },
+  p8: { title: 'Webhook event handler',               tool: 'Cursor', quality: 5 },
+  p9: { title: 'Spot rate request email parser',      tool: 'Claude', quality: 4 },
+};
+
+/* ------------------------------------------------------------------ */
+/*  Date helper                                                         */
+/* ------------------------------------------------------------------ */
+function formatFullDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const weekday = date.toLocaleDateString('en-US', { weekday: 'long' });
+  const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+  return `${weekday}, ${day} ${monthName} ${year}`;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Shared label style                                                  */
+/* ------------------------------------------------------------------ */
+const sectionLabel: React.CSSProperties = {
+  fontSize: 10,
+  textTransform: 'uppercase',
+  fontWeight: 700,
+  color: '#94A3B8',
+  letterSpacing: '0.06em',
+  marginBottom: 8,
+  fontFamily: 'var(--font-dm-sans)',
+  display: 'block',
+};
+
+/* ------------------------------------------------------------------ */
+/*  SessionDetail                                                       */
+/* ------------------------------------------------------------------ */
+interface SessionDetailProps {
+  session: VibeSession | null;
+  onUpdate: (updated: VibeSession) => void;
+}
+
+export default function SessionDetail({ session, onUpdate }: SessionDetailProps) {
+  /* Empty state */
+  if (!session) {
+    return (
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#F8FAFC',
+        }}
+      >
+        <Zap size={48} style={{ color: '#CBD5E1' }} />
+        <div
+          style={{
+            fontSize: 14,
+            color: '#94A3B8',
+            marginTop: 12,
+            fontFamily: 'var(--font-dm-sans)',
+          }}
+        >
+          Select a session
+        </div>
+      </div>
+    );
+  }
+
+  return <SessionDetailInner session={session} onUpdate={onUpdate} />;
+}
+
+/* Inner component — remounted via key when session changes */
+function SessionDetailInner({
+  session,
+  onUpdate,
+}: {
+  session: VibeSession;
+  onUpdate: (updated: VibeSession) => void;
+}) {
+  /* ── Local state ── */
+  const [localTitle, setLocalTitle] = useState(session.title);
+  const [localGoal, setLocalGoal] = useState(session.goal);
+  const [localDuration, setLocalDuration] = useState(String(session.duration));
+  const [editingDuration, setEditingDuration] = useState(false);
+  const [localProtoUrl, setLocalProtoUrl] = useState(session.prototypeUrl ?? '');
+  const [localWorked, setLocalWorked] = useState(session.notes.worked);
+  const [localImprove, setLocalImprove] = useState(session.notes.improve);
+  const [backlogItems, setBacklogItems] = useState<BacklogItem[]>(session.backlogItems);
+  const [jiraSyncedIds, setJiraSyncedIds] = useState<string[]>(session.jiraSyncedIds);
+  const [featuresOpen, setFeaturesOpen] = useState(true);
+  const [addingItem, setAddingItem] = useState(false);
+  const [newItemTitle, setNewItemTitle] = useState('');
+  const [savedVisible, setSavedVisible] = useState(false);
+  const [syncedVisible, setSyncedVisible] = useState(false);
+
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const syncedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+      if (syncedTimerRef.current) clearTimeout(syncedTimerRef.current);
+    };
+  }, []);
+
+  /* ── Save helper ── */
+  function save(overrides: Partial<VibeSession> = {}) {
+    const updated: VibeSession = {
+      ...session,
+      title: localTitle,
+      goal: localGoal,
+      duration: parseFloat(localDuration) || session.duration,
+      prototypeUrl: localProtoUrl || undefined,
+      notes: { worked: localWorked, improve: localImprove },
+      backlogItems,
+      jiraSyncedIds,
+      ...overrides,
+    };
+    onUpdate(updated);
+    setSavedVisible(true);
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setSavedVisible(false), 3000);
+  }
+
+  /* ── Add backlog item ── */
+  function commitNewItem() {
+    if (!newItemTitle.trim()) {
+      setAddingItem(false);
+      setNewItemTitle('');
+      return;
+    }
+    const newItem: BacklogItem = {
+      id: `b-${Date.now()}`,
+      title: newItemTitle.trim(),
+      status: 'TODO',
+      jiraId: '',
+    };
+    const updated = [...backlogItems, newItem];
+    setBacklogItems(updated);
+    setNewItemTitle('');
+    setAddingItem(false);
+    save({ backlogItems: updated });
+  }
+
+  /* ── Jira sync ── */
+  function handleJiraSync() {
+    const newIds = backlogItems
+      .map((b) => b.jiraId)
+      .filter((id): id is string => !!id);
+    const merged = Array.from(new Set([...jiraSyncedIds, ...newIds]));
+    setJiraSyncedIds(merged);
+    save({ jiraSyncedIds: merged });
+    setSyncedVisible(true);
+    if (syncedTimerRef.current) clearTimeout(syncedTimerRef.current);
+    syncedTimerRef.current = setTimeout(() => setSyncedVisible(false), 3000);
+  }
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', background: '#FFFFFF', position: 'relative' }}>
+      {/* ── Saved indicator ── */}
+      <div
+        style={{
+          position: 'fixed',
+          top: 16,
+          right: 24,
+          zIndex: 100,
+          background: '#F0FDF4',
+          border: '1px solid #BBF7D0',
+          color: '#16A34A',
+          fontSize: 12,
+          padding: '4px 12px',
+          fontFamily: 'var(--font-dm-sans)',
+          opacity: savedVisible ? 1 : 0,
+          transition: 'opacity 300ms ease',
+          pointerEvents: 'none',
+        }}
+      >
+        Saved ✓
+      </div>
+
+      {/* ── Synced toast ── */}
+      {syncedVisible && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 44,
+            right: 24,
+            zIndex: 100,
+            background: '#EFF6FF',
+            border: '1px solid #BFDBFE',
+            color: '#2563EB',
+            fontSize: 12,
+            padding: '4px 12px',
+            fontFamily: 'var(--font-dm-sans)',
+          }}
+        >
+          Synced to Jira ✓
+        </div>
+      )}
+
+      {/* ── TOP BAR ── */}
+      <div
+        style={{
+          padding: '24px 24px 16px',
+          borderBottom: '1px solid #F1F5F9',
+        }}
+      >
+        {/* Title */}
+        <input
+          value={localTitle}
+          onChange={(e) => setLocalTitle(e.target.value)}
+          onBlur={() => save({ title: localTitle })}
+          placeholder="Session title..."
+          style={{
+            fontSize: 20,
+            fontWeight: 700,
+            color: '#0F172A',
+            width: '100%',
+            border: 'none',
+            outline: 'none',
+            background: 'transparent',
+            fontFamily: 'var(--font-dm-sans)',
+            padding: 0,
+          }}
+        />
+
+        {/* Meta row */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 16,
+            marginTop: 8,
+          }}
+        >
+          {/* Date */}
+          <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>
+            {formatFullDate(session.date)}
+          </span>
+
+          {/* Duration click-to-edit */}
+          {editingDuration ? (
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <input
+                autoFocus
+                type="number"
+                min={0.5}
+                step={0.5}
+                value={localDuration}
+                onChange={(e) => setLocalDuration(e.target.value)}
+                onBlur={() => {
+                  setEditingDuration(false);
+                  save({ duration: parseFloat(localDuration) || session.duration });
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setEditingDuration(false);
+                    save({ duration: parseFloat(localDuration) || session.duration });
+                  }
+                }}
+                style={{
+                  width: 60,
+                  height: 24,
+                  border: '1px solid #E2E8F0',
+                  background: '#F1F5F9',
+                  fontSize: 12,
+                  paddingLeft: 8,
+                  outline: 'none',
+                  borderRadius: 0,
+                  fontFamily: 'var(--font-dm-sans)',
+                }}
+              />
+              <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>hours</span>
+            </span>
+          ) : (
+            <span
+              onClick={() => setEditingDuration(true)}
+              style={{
+                fontSize: 12,
+                color: '#94A3B8',
+                cursor: 'text',
+                fontFamily: 'var(--font-dm-sans)',
+                borderBottom: '1px dashed #E2E8F0',
+              }}
+            >
+              {localDuration} hours
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── SECTIONS ── */}
+      <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+
+        {/* ── SESSION GOAL ── */}
+        <div>
+          <span style={sectionLabel}>Session Goal</span>
+          <textarea
+            value={localGoal}
+            onChange={(e) => setLocalGoal(e.target.value)}
+            onBlur={() => save({ goal: localGoal })}
+            placeholder="What are you trying to build in this session?"
+            rows={3}
+            style={{
+              width: '100%',
+              minHeight: 72,
+              border: 'none',
+              borderLeft: '3px solid #E2E8F0',
+              outline: 'none',
+              resize: 'none',
+              paddingLeft: 12,
+              paddingTop: 4,
+              paddingBottom: 4,
+              paddingRight: 0,
+              fontSize: 14,
+              color: '#0F172A',
+              lineHeight: 1.6,
+              fontFamily: 'var(--font-dm-sans)',
+              background: 'transparent',
+            }}
+          />
+        </div>
+
+        {/* ── LINKED FEATURES ── */}
+        <div>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 8,
+            }}
+          >
+            <span style={{ ...sectionLabel, margin: 0 }}>Linked Features</span>
+            <button
+              onClick={() => setFeaturesOpen((v) => !v)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                padding: 0,
+                display: 'flex',
+                alignItems: 'center',
+                color: '#94A3B8',
+              }}
+            >
+              {featuresOpen
+                ? <ChevronUp size={14} />
+                : <ChevronDown size={14} />}
+            </button>
+          </div>
+
+          {featuresOpen && (
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
+              {session.linkedFeatureIds.map((fid) => {
+                const feat = FEATURES_LOOKUP[fid];
+                if (!feat) return null;
+                const statusCfg = STATUS_CONFIG[feat.status] ?? STATUS_CONFIG.IDEA;
+                return (
+                  <div
+                    key={fid}
+                    style={{
+                      width: 140,
+                      flexShrink: 0,
+                      border: '1px solid #E2E8F0',
+                      padding: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: statusCfg.color,
+                        background: statusCfg.bg,
+                        padding: '1px 6px',
+                        fontFamily: 'var(--font-dm-sans)',
+                        fontWeight: 600,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      {feat.status}
+                    </span>
+                    <div
+                      style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: '#0F172A',
+                        marginTop: 4,
+                        lineHeight: 1.4,
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        fontFamily: 'var(--font-dm-sans)',
+                      }}
+                    >
+                      {feat.title}
+                    </div>
+                    {feat.size && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: '#FFFFFF',
+                          background: SIZE_CONFIG[feat.size]?.color ?? '#94A3B8',
+                          padding: '1px 6px',
+                          marginTop: 4,
+                          display: 'inline-block',
+                          fontFamily: 'var(--font-dm-sans)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {feat.size}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+              {/* + Link feature ghost chip */}
+              <div
+                style={{
+                  width: 120,
+                  flexShrink: 0,
+                  border: '1px dashed #E2E8F0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  padding: '8px 12px',
+                  fontFamily: 'var(--font-dm-sans)',
+                }}
+              >
+                + Link feature
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── PROMPTS USED ── */}
+        <div>
+          <span style={sectionLabel}>Prompts Used</span>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+            {session.promptIds.map((pid) => {
+              const prompt = PROMPTS_LOOKUP[pid];
+              if (!prompt) return null;
+              const toolColor = TOOL_CONFIG[prompt.tool]?.color ?? '#64748B';
+              return (
+                <div
+                  key={pid}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    border: '1px solid #E2E8F0',
+                    padding: '6px 8px',
+                    background: '#FFFFFF',
+                    flexShrink: 0,
+                  }}
+                >
+                  {/* Tool dot */}
+                  <div
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: toolColor,
+                      flexShrink: 0,
+                    }}
+                  />
+                  {/* Title */}
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: '#0F172A',
+                      maxWidth: 160,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontFamily: 'var(--font-dm-sans)',
+                    }}
+                  >
+                    {prompt.title.slice(0, 20)}{prompt.title.length > 20 ? '...' : ''}
+                  </span>
+                  {/* Stars */}
+                  <span style={{ fontSize: 10, flexShrink: 0 }}>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <span key={s} style={{ color: s <= prompt.quality ? '#D97706' : '#E2E8F0' }}>★</span>
+                    ))}
+                  </span>
+                </div>
+              );
+            })}
+            {/* + Add prompt ghost chip */}
+            <div
+              style={{
+                border: '1px dashed #E2E8F0',
+                padding: '6px 12px',
+                fontSize: 12,
+                color: '#94A3B8',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                flexShrink: 0,
+                fontFamily: 'var(--font-dm-sans)',
+              }}
+            >
+              + Add prompt
+            </div>
+          </div>
+        </div>
+
+        {/* ── PROTOTYPE OUTPUT ── */}
+        <div>
+          <span style={sectionLabel}>Prototype Output</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input
+              value={localProtoUrl}
+              onChange={(e) => setLocalProtoUrl(e.target.value)}
+              onBlur={() => save({ prototypeUrl: localProtoUrl || undefined })}
+              placeholder="https://v0.dev/t/..."
+              style={{
+                flex: 1,
+                height: 32,
+                border: '1px solid #E2E8F0',
+                background: '#F1F5F9',
+                paddingLeft: 12,
+                paddingRight: 12,
+                fontSize: 13,
+                outline: 'none',
+                borderRadius: 0,
+                fontFamily: 'var(--font-dm-sans)',
+                color: '#0F172A',
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = '#2563EB'; }}
+              onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; }}
+            />
+            <button
+              disabled={!localProtoUrl}
+              onClick={() => localProtoUrl && window.open(localProtoUrl, '_blank')}
+              style={{
+                height: 32,
+                paddingLeft: 12,
+                paddingRight: 12,
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                color: localProtoUrl ? '#0F172A' : '#94A3B8',
+                fontSize: 13,
+                cursor: localProtoUrl ? 'pointer' : 'not-allowed',
+                borderRadius: 0,
+                fontFamily: 'var(--font-dm-sans)',
+                flexShrink: 0,
+              }}
+            >
+              Open ↗
+            </button>
+          </div>
+
+          {/* Browser mockup */}
+          {localProtoUrl && (
+            <div style={{ marginTop: 8, border: '1px solid #E2E8F0' }}>
+              {/* URL bar */}
+              <div
+                style={{
+                  background: '#F1F5F9',
+                  height: 28,
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                  {['#DC2626', '#D97706', '#16A34A'].map((c) => (
+                    <div key={c} style={{ width: 6, height: 6, borderRadius: '50%', background: c }} />
+                  ))}
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    color: '#94A3B8',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    fontFamily: 'var(--font-dm-sans)',
+                  }}
+                >
+                  {localProtoUrl}
+                </span>
+              </div>
+              {/* Content area */}
+              <div
+                style={{
+                  height: 80,
+                  background: '#F8FAFC',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <span style={{ fontSize: 11, color: '#CBD5E1', fontFamily: 'var(--font-dm-sans)' }}>
+                  Preview not available
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── SESSION NOTES ── */}
+        <div>
+          <span style={sectionLabel}>Session Notes</span>
+          <div className="notes-grid">
+            {/* What worked */}
+            <div>
+              <span
+                style={{
+                  display: 'block',
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  color: '#16A34A',
+                  letterSpacing: '0.06em',
+                  marginBottom: 6,
+                  fontFamily: 'var(--font-dm-sans)',
+                }}
+              >
+                What worked
+              </span>
+              <textarea
+                value={localWorked}
+                onChange={(e) => setLocalWorked(e.target.value)}
+                onBlur={() => save({ notes: { worked: localWorked, improve: localImprove } })}
+                placeholder="What went well..."
+                style={{
+                  width: '100%',
+                  minHeight: 100,
+                  border: 'none',
+                  borderLeft: '3px solid #16A34A',
+                  outline: 'none',
+                  resize: 'none',
+                  paddingLeft: 12,
+                  paddingTop: 4,
+                  paddingBottom: 4,
+                  paddingRight: 0,
+                  fontSize: 13,
+                  color: '#0F172A',
+                  lineHeight: 1.6,
+                  fontFamily: 'var(--font-dm-sans)',
+                  background: 'transparent',
+                }}
+              />
+            </div>
+
+            {/* What to improve */}
+            <div>
+              <span
+                style={{
+                  display: 'block',
+                  fontSize: 10,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                  color: '#D97706',
+                  letterSpacing: '0.06em',
+                  marginBottom: 6,
+                  fontFamily: 'var(--font-dm-sans)',
+                }}
+              >
+                What to improve
+              </span>
+              <textarea
+                value={localImprove}
+                onChange={(e) => setLocalImprove(e.target.value)}
+                onBlur={() => save({ notes: { worked: localWorked, improve: localImprove } })}
+                placeholder="What to do better next time..."
+                style={{
+                  width: '100%',
+                  minHeight: 100,
+                  border: 'none',
+                  borderLeft: '3px solid #D97706',
+                  outline: 'none',
+                  resize: 'none',
+                  paddingLeft: 12,
+                  paddingTop: 4,
+                  paddingBottom: 4,
+                  paddingRight: 0,
+                  fontSize: 13,
+                  color: '#0F172A',
+                  lineHeight: 1.6,
+                  fontFamily: 'var(--font-dm-sans)',
+                  background: 'transparent',
+                }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ── BACKLOG ITEMS ── */}
+        <div>
+          <span style={sectionLabel}>Backlog Items</span>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ height: 28, borderBottom: '1px solid #E2E8F0' }}>
+                {['TASK', 'STATUS', 'JIRA'].map((h) => (
+                  <th
+                    key={h}
+                    style={{
+                      fontSize: 10,
+                      textTransform: 'uppercase',
+                      color: '#94A3B8',
+                      fontWeight: 700,
+                      textAlign: 'left',
+                      fontFamily: 'var(--font-dm-sans)',
+                      letterSpacing: '0.06em',
+                      paddingBottom: 4,
+                    }}
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {backlogItems.map((item) => (
+                <BacklogItemRow key={item.id} item={item} />
+              ))}
+
+              {/* Add row */}
+              {addingItem ? (
+                <tr style={{ height: 32 }}>
+                  <td colSpan={3}>
+                    <input
+                      autoFocus
+                      value={newItemTitle}
+                      onChange={(e) => setNewItemTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') commitNewItem();
+                        if (e.key === 'Escape') {
+                          setAddingItem(false);
+                          setNewItemTitle('');
+                        }
+                      }}
+                      onBlur={commitNewItem}
+                      placeholder="New backlog item title..."
+                      style={{
+                        width: '100%',
+                        height: 28,
+                        border: '1px solid #E2E8F0',
+                        background: '#F1F5F9',
+                        paddingLeft: 8,
+                        fontSize: 13,
+                        outline: 'none',
+                        borderRadius: 0,
+                        fontFamily: 'var(--font-dm-sans)',
+                        color: '#0F172A',
+                      }}
+                    />
+                  </td>
+                </tr>
+              ) : (
+                <tr style={{ height: 32, borderTop: '1px dashed #E2E8F0' }}>
+                  <td colSpan={3}>
+                    <button
+                      onClick={() => setAddingItem(true)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: 12,
+                        color: '#2563EB',
+                        cursor: 'pointer',
+                        padding: 0,
+                        fontFamily: 'var(--font-dm-sans)',
+                      }}
+                    >
+                      + Create backlog item
+                    </button>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── JIRA SYNC ── */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>
+              {jiraSyncedIds.length > 0
+                ? `${jiraSyncedIds.length} item${jiraSyncedIds.length !== 1 ? 's' : ''} synced to Jira`
+                : 'Not synced yet'}
+            </span>
+            <button
+              onClick={handleJiraSync}
+              style={{
+                height: 32,
+                paddingLeft: 12,
+                paddingRight: 12,
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                color: '#0F172A',
+                fontSize: 13,
+                cursor: 'pointer',
+                borderRadius: 0,
+                fontFamily: 'var(--font-dm-sans)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
+            >
+              {/* Jira icon placeholder */}
+              <div
+                style={{
+                  width: 14,
+                  height: 14,
+                  background: '#2563EB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <span style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>J</span>
+              </div>
+              Sync to Jira
+            </button>
+          </div>
+
+          {/* Synced ID chips */}
+          {jiraSyncedIds.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+              {jiraSyncedIds.map((id) => (
+                <span
+                  key={id}
+                  style={{
+                    background: '#EFF6FF',
+                    color: '#2563EB',
+                    fontSize: 10,
+                    padding: '2px 6px',
+                    border: '1px solid #BFDBFE',
+                    fontFamily: 'var(--font-dm-sans)',
+                  }}
+                >
+                  {id}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Bottom padding */}
+        <div style={{ height: 32 }} />
+      </div>
+
+      {/* Notes grid CSS */}
+      <style>{`
+        .notes-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+        }
+        @media (max-width: 640px) {
+          .notes-grid { grid-template-columns: 1fr; }
+        }
+      `}</style>
+    </div>
+  );
+}

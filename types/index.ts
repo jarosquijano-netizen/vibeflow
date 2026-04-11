@@ -28,7 +28,7 @@ export interface Prompt {
 export interface BacklogItem {
   id: string;
   title: string;
-  status: string;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
   jiraId?: string;
 }
 
