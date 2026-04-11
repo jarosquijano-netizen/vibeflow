@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Info, ChevronDown, ChevronUp } from 'lucide-react';
 import { vibeToast } from '@/components/polish/toasts';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -23,7 +24,7 @@ interface AISizeEstimatorProps {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Config                                                              */
+/*  Config — Default                                                    */
 /* ------------------------------------------------------------------ */
 const SIZE_COLORS: Record<string, string> = {
   XS: '#64748B',
@@ -31,6 +32,17 @@ const SIZE_COLORS: Record<string, string> = {
   M: '#2563EB',
   L: '#D97706',
   XL: '#DC2626',
+};
+
+/* ------------------------------------------------------------------ */
+/*  Config — Cyber                                                      */
+/* ------------------------------------------------------------------ */
+const CYBER_SIZE_COLOR: Record<string, string> = {
+  XS: '#64748B',
+  S:  '#00FF88',
+  M:  '#00D4FF',
+  L:  '#FFB800',
+  XL: '#FF4444',
 };
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL'];
@@ -50,6 +62,15 @@ const CONFIDENCE_STYLES: Record<string, { bg: string; color: string; border: str
   LOW:    { bg: '#FEF2F2', color: '#DC2626', border: '#FECACA', label: '● Low' },
 };
 
+const CYBER_CONFIDENCE_STYLES: Record<string, { bg: string; color: string; border: string; label: string }> = {
+  HIGH:   { bg: 'rgba(0,255,136,0.05)',  color: '#00FF88', border: 'rgba(0,255,136,0.3)',  label: '● HIGH' },
+  MEDIUM: { bg: 'rgba(255,184,0,0.05)',  color: '#FFB800', border: 'rgba(255,184,0,0.3)',  label: '● MEDIUM' },
+  LOW:    { bg: 'rgba(255,68,68,0.05)',  color: '#FF4444', border: 'rgba(255,68,68,0.3)',  label: '● LOW' },
+};
+
+const MONO = "'JetBrains Mono', monospace";
+const DISPLAY = "'Space Grotesk', sans-serif";
+
 /* ------------------------------------------------------------------ */
 /*  Component                                                           */
 /* ------------------------------------------------------------------ */
@@ -59,6 +80,9 @@ export default function AISizeEstimator({
   currentSize,
   onSizeAccepted,
 }: AISizeEstimatorProps) {
+  const { theme } = useTheme();
+  const isCyber = theme === 'cyber';
+
   const [uiState, setUiState] = useState<'idle' | 'loading' | 'result'>('idle');
   const [result, setResult] = useState<EstimateResult | null>(null);
   const [accepted, setAccepted] = useState(false);
@@ -90,7 +114,6 @@ export default function AISizeEstimator({
     }
   }
 
-  /* ── Size selector handler ── */
   function handleSizeClick(size: string) {
     onSizeAccepted(size);
     if (result) setOverridden(true);
@@ -98,6 +121,540 @@ export default function AISizeEstimator({
 
   const canEstimate = featureTitle.length >= 3 && problemStatement.length >= 10;
 
+  /* ================================================================ */
+  /*  CYBER RENDER                                                     */
+  /* ================================================================ */
+  if (isCyber) {
+    return (
+      <div>
+        {/* Dev demo toggle — cyber */}
+        {isDev && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              marginBottom: 10,
+              padding: '4px 8px',
+              background: '#0A0A0F',
+              border: '1px dashed rgba(59,75,61,0.3)',
+              fontSize: 10,
+              color: '#4B5563',
+              fontFamily: MONO,
+            }}
+          >
+            <span>// demo:</span>
+            {(['idle', 'loading', 'result'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => {
+                  if (s === 'result') setResult(MOCK_RESULT);
+                  setUiState(s);
+                  if (s !== 'result') { setAccepted(false); setOverridden(false); }
+                }}
+                style={{
+                  height: 20,
+                  paddingLeft: 8,
+                  paddingRight: 8,
+                  fontSize: 10,
+                  background: 'none',
+                  border: `1px solid ${uiState === s ? '#BF00FF' : '#2A2A3E'}`,
+                  color: uiState === s ? '#BF00FF' : '#4B5563',
+                  cursor: 'pointer',
+                  borderRadius: 0,
+                  fontFamily: MONO,
+                  textTransform: 'uppercase',
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Size selector — cyber */}
+        <div style={{ marginBottom: 12 }}>
+          <div
+            style={{
+              fontFamily: MONO,
+              fontSize: 10,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: '#4B5563',
+              marginBottom: 6,
+            }}
+          >
+            {'// EFFORT_ESTIMATE'}
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {SIZES.map((size) => {
+              const active = currentSize === size;
+              const col = CYBER_SIZE_COLOR[size];
+              return (
+                <button
+                  key={size}
+                  onClick={() => handleSizeClick(size)}
+                  style={{
+                    width: 40,
+                    height: 32,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    background: active ? `${col}1A` : '#0E0E13',
+                    color: active ? col : '#4B5563',
+                    border: `1px solid ${active ? col : '#2A2A3E'}`,
+                    boxShadow: active ? `0 0 10px ${col}4D` : 'none',
+                    cursor: 'pointer',
+                    transition: 'all 100ms ease',
+                    borderRadius: 0,
+                    fontFamily: MONO,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.borderColor = col;
+                      e.currentTarget.style.color = col;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!active) {
+                      e.currentTarget.style.borderColor = '#2A2A3E';
+                      e.currentTarget.style.color = '#4B5563';
+                    }
+                  }}
+                >
+                  {size}
+                </button>
+              );
+            })}
+          </div>
+          <div
+            style={{
+              fontFamily: MONO,
+              fontSize: 10,
+              color: '#4B5563',
+              marginTop: 4,
+            }}
+          >
+            XS &lt;1w · S 1-2w · M 2-4w · L 1-2mo · XL 2mo+
+          </div>
+          {overridden && result && (
+            <div
+              style={{
+                fontFamily: MONO,
+                fontSize: 10,
+                color: '#FFB800',
+                marginTop: 4,
+              }}
+            >
+              ⚠ override: AI suggested {result.size}
+            </div>
+          )}
+        </div>
+
+        {/* AI Estimate Panel — cyber */}
+        <div
+          style={{
+            background: '#0A0A0F',
+            border: '1px solid #2A2A3E',
+            borderLeft: '3px solid #BF00FF',
+            boxShadow: 'inset 3px 0 12px rgba(191,0,255,0.1)',
+          }}
+        >
+          {/* Panel header */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              padding: '10px 12px 8px',
+              borderBottom: '1px solid #1A1A2A',
+            }}
+          >
+            <span
+              style={{
+                fontFamily: DISPLAY,
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: '#BF00FF',
+              }}
+            >
+              ✦ AI_SIZE_ESTIMATE
+            </span>
+            <span title="AI analyzes title and problem statement to suggest complexity">
+              <Info size={14} style={{ color: '#4B5563', cursor: 'default', display: 'block' }} />
+            </span>
+          </div>
+
+          {/* ── IDLE STATE — cyber ── */}
+          {uiState === 'idle' && (
+            <div style={{ padding: '10px 12px 12px' }}>
+              {!canEstimate ? (
+                <p
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: 11,
+                    color: '#4B5563',
+                    fontStyle: 'italic',
+                    margin: 0,
+                  }}
+                >
+                  {'// fill title + problem_statement to enable'}
+                </p>
+              ) : (
+                <>
+                  <button
+                    onClick={handleEstimate}
+                    style={{
+                      width: '100%',
+                      height: 32,
+                      background: '#BF00FF',
+                      color: '#0A0A0F',
+                      border: 'none',
+                      fontFamily: DISPLAY,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      cursor: 'pointer',
+                      borderRadius: 0,
+                      transition: 'box-shadow 150ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 0 20px rgba(191,0,255,0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    ✦ ESTIMATE_WITH_AI
+                  </button>
+                  <p
+                    style={{
+                      fontFamily: MONO,
+                      fontSize: 10,
+                      color: '#4B5563',
+                      textAlign: 'center',
+                      margin: '6px 0 0',
+                    }}
+                  >
+                    {'// analyzes_complexity, integrations, scope'}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── LOADING STATE — cyber ── */}
+          {uiState === 'loading' && (
+            <div
+              style={{
+                padding: '10px 12px 12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}
+            >
+              {[
+                { text: '// analyzing_feature_scope...',       delay: '0ms' },
+                { text: '// checking_integration_complexity...', delay: '800ms' },
+                { text: '// reviewing_data_model_changes...',   delay: '1800ms' },
+              ].map(({ text, delay }) => (
+                <div
+                  key={text}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    opacity: 0,
+                    animation: `fadeIn 0.3s ease ${delay} forwards`,
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      background: '#BF00FF',
+                      flexShrink: 0,
+                      animation: 'ai-pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontFamily: MONO,
+                      fontSize: 11,
+                      fontStyle: 'italic',
+                      color: '#BF00FF',
+                    }}
+                  >
+                    {text}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* ── RESULT STATE — cyber ── */}
+          {uiState === 'result' && result && (
+            <div
+              style={{
+                padding: '10px 12px 12px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+                animation: 'fadeIn 0.2s ease forwards',
+              }}
+            >
+              {/* Top row: AI_SUGGESTS + size badge + confidence */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span
+                  style={{
+                    fontFamily: MONO,
+                    fontSize: 10,
+                    color: '#4B5563',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    flexShrink: 0,
+                  }}
+                >
+                  AI_SUGGESTS:
+                </span>
+                {/* Size badge */}
+                <div
+                  style={{
+                    width: 48,
+                    height: 40,
+                    background: `${CYBER_SIZE_COLOR[result.size] ?? '#64748B'}1A`,
+                    color: CYBER_SIZE_COLOR[result.size] ?? '#64748B',
+                    border: `1px solid ${CYBER_SIZE_COLOR[result.size] ?? '#64748B'}`,
+                    boxShadow: `0 0 12px ${CYBER_SIZE_COLOR[result.size] ?? '#64748B'}4D`,
+                    fontFamily: DISPLAY,
+                    fontSize: 22,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {result.size}
+                </div>
+                {/* Confidence badge */}
+                {CYBER_CONFIDENCE_STYLES[result.confidence] && (
+                  <span
+                    style={{
+                      fontFamily: MONO,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      background: CYBER_CONFIDENCE_STYLES[result.confidence].bg,
+                      color: CYBER_CONFIDENCE_STYLES[result.confidence].color,
+                      border: `1px solid ${CYBER_CONFIDENCE_STYLES[result.confidence].border}`,
+                      padding: '2px 8px',
+                    }}
+                  >
+                    {CYBER_CONFIDENCE_STYLES[result.confidence].label}
+                  </span>
+                )}
+              </div>
+
+              {/* Rationale accordion — cyber */}
+              <div>
+                <button
+                  onClick={() => setRationaleExpanded((v) => !v)}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    borderTop: '1px solid #1A1A2A',
+                    cursor: 'pointer',
+                    padding: '6px 0 4px',
+                    fontFamily: MONO,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: MONO,
+                      fontSize: 10,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: '#4B5563',
+                    }}
+                  >
+                    {'// RATIONALE'}
+                  </span>
+                  {rationaleExpanded ? (
+                    <ChevronUp size={12} style={{ color: '#4B5563' }} />
+                  ) : (
+                    <ChevronDown size={12} style={{ color: '#4B5563' }} />
+                  )}
+                </button>
+                {rationaleExpanded && (
+                  <p
+                    style={{
+                      fontFamily: MONO,
+                      fontSize: 11,
+                      color: '#9CA3AF',
+                      lineHeight: 1.6,
+                      margin: '4px 0 0',
+                      borderLeft: '2px solid #1A1A2A',
+                      paddingLeft: 8,
+                    }}
+                  >
+                    {result.rationale}
+                  </p>
+                )}
+              </div>
+
+              {/* Factor chips — cyber */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {result.factors.map((f) => (
+                  <span
+                    key={f}
+                    style={{
+                      background: '#0E0E13',
+                      border: '1px solid #2A2A3E',
+                      color: '#6B7280',
+                      fontFamily: MONO,
+                      fontSize: 10,
+                      padding: '2px 8px',
+                      borderRadius: 0,
+                    }}
+                  >
+                    {f}
+                  </span>
+                ))}
+              </div>
+
+              {/* Assumptions — cyber */}
+              <p
+                style={{
+                  fontFamily: MONO,
+                  fontSize: 10,
+                  color: '#4B5563',
+                  fontStyle: 'italic',
+                  margin: 0,
+                }}
+              >
+                // assumes: {result.assumptions}
+              </p>
+
+              {/* Action row — cyber */}
+              {!accepted ? (
+                <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
+                  <button
+                    onClick={() => {
+                      onSizeAccepted(result.size);
+                      setAccepted(true);
+                      setOverridden(false);
+                      vibeToast.success('AI size estimate accepted');
+                    }}
+                    style={{
+                      flex: 1,
+                      height: 30,
+                      background: 'none',
+                      border: '1px solid #00FF88',
+                      color: '#00FF88',
+                      fontFamily: MONO,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      cursor: 'pointer',
+                      borderRadius: 0,
+                      transition: 'box-shadow 150ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = '0 0 12px rgba(0,255,136,0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
+                  >
+                    ✓ ACCEPT
+                  </button>
+                  <button
+                    onClick={() => setOverridden(true)}
+                    style={{
+                      height: 30,
+                      paddingLeft: 12,
+                      paddingRight: 12,
+                      background: 'none',
+                      border: 'none',
+                      color: '#4B5563',
+                      fontFamily: MONO,
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      borderRadius: 0,
+                      transition: 'color 150ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#9CA3AF';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#4B5563';
+                    }}
+                  >
+                    override
+                  </button>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'rgba(0,255,136,0.05)',
+                    border: '1px solid rgba(0,255,136,0.3)',
+                    padding: '5px 10px',
+                    marginTop: 2,
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: MONO,
+                      fontSize: 10,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: '#00FF88',
+                    }}
+                  >
+                    ✦ AI_ESTIMATE_ACCEPTED
+                  </span>
+                  <button
+                    onClick={() => { setUiState('idle'); setResult(null); setAccepted(false); }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#BF00FF',
+                      fontFamily: MONO,
+                      fontSize: 10,
+                      cursor: 'pointer',
+                      padding: 0,
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    re-run
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ================================================================ */
+  /*  DEFAULT RENDER                                                   */
+  /* ================================================================ */
   return (
     <div>
       {/* ── Dev demo toggle ── */}

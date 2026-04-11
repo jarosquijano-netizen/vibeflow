@@ -30,14 +30,15 @@
   --color-border-strong: #CBD5E1;
   --color-content-bg: #F8FAFC;
 
-  /* Fonts */
-  --font-primary: 'DM Sans', Arial, Helvetica, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --font-display: 'DM Sans', Arial, Helvetica, sans-serif;
-
-  /* Legacy aliases (used by existing components) */
+  /* Fonts — fallbacks used before next/font class hydrates */
   --font-dm-sans: 'DM Sans', Arial, Helvetica, sans-serif;
   --font-jetbrains-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-space-grotesk: 'Space Grotesk', sans-serif;
+
+  /* Semantic aliases (reference the variables above) */
+  --font-primary: var(--font-dm-sans);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-dm-sans);
 }
 
 /* ------------------------------------------------------------------ */
@@ -68,14 +69,15 @@
   --color-border-strong: rgba(59,75,61,0.6);
   --color-content-bg: #0A0A0F;
 
-  /* Fonts */
-  --font-primary: 'DM Sans', Arial, Helvetica, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-display: 'Space Grotesk', sans-serif;
-
-  /* Legacy aliases */
+  /* Fonts — fallbacks used before next/font class hydrates */
   --font-dm-sans: 'DM Sans', Arial, Helvetica, sans-serif;
   --font-jetbrains-mono: 'JetBrains Mono', monospace;
+  --font-space-grotesk: 'Space Grotesk', sans-serif;
+
+  /* Semantic aliases */
+  --font-primary: var(--font-dm-sans);
+  --font-mono: var(--font-jetbrains-mono);
+  --font-display: var(--font-space-grotesk);
 }
 
 /* Dot grid for main content area */
