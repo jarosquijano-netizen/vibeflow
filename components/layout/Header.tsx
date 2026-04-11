@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Search, Bell, Plus, Kanban, BookMarked, Zap, ChevronDown } from 'lucide-react';
+import ThemeSwitcher from '@/components/layout/ThemeSwitcher';
 
 interface HeaderProps {
   title: string;
@@ -183,6 +184,9 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
           Q2 2026
           <ChevronDown size={12} style={{ color: '#94A3B8' }} />
         </button>
+
+        {/* Theme switcher */}
+        <ThemeSwitcher />
 
         {/* Bell */}
         <div style={{ position: 'relative' }}>
