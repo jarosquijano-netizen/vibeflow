@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 1024,
         messages: [
           {
@@ -24,12 +24,15 @@ Problem statement: ${problemStatement}
 
 Respond with ONLY valid JSON in exactly this shape:
 {
-  "size": "XS" | "S" | "M" | "L" | "XL",
-  "confidence": "HIGH" | "MEDIUM" | "LOW",
+  "size": "XS",
+  "confidence": "HIGH",
   "rationale": "3-5 sentence explanation of the sizing decision",
   "factors": ["factor 1", "factor 2", "factor 3"],
   "assumptions": "brief assumptions made"
 }
+
+Size must be one of: XS, S, M, L, XL
+Confidence must be one of: HIGH, MEDIUM, LOW
 
 Size guide:
 XS = under 1 week (trivial UI change, no backend)
@@ -45,8 +48,23 @@ Consider: API integrations, data model changes, UI complexity, external dependen
     });
 
     const data = await response.json();
+
+    // Log full response in dev to help debug
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[estimate-size] status:', response.status);
+      console.log('[estimate-size] response:', JSON.stringify(data, null, 2));
+    }
+
+    if (!response.ok) {
+      console.error('[estimate-size] Anthropic error:', data);
+      return Response.json({ error: true, detail: data }, { status: 502 });
+    }
+
     const text = data.content[0].text;
-    const parsed = JSON.parse(text);
+
+    // Strip markdown code fences if model wraps the JSON
+    const cleaned = text.replace(/```json\s*/gi, '').replace(/```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
     return Response.json(parsed);
   } catch (err) {
     console.error('[estimate-size]', err);
