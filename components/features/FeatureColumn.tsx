@@ -10,7 +10,7 @@ import FeatureCard, { STATUS_CONFIG } from './FeatureCard';
 /* ------------------------------------------------------------------ */
 /*  Sortable card wrapper                                               */
 /* ------------------------------------------------------------------ */
-function SortableCard({ feature }: { feature: Feature }) {
+function SortableCard({ feature, onClick }: { feature: Feature; onClick?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: feature.id,
   });
@@ -25,7 +25,7 @@ function SortableCard({ feature }: { feature: Feature }) {
         transition,
       }}
     >
-      <FeatureCard feature={feature} isDragging={isDragging} />
+      <FeatureCard feature={feature} isDragging={isDragging} onClick={onClick} />
     </div>
   );
 }
@@ -37,9 +37,10 @@ interface FeatureColumnProps {
   status: string;
   features: Feature[];
   isOver?: boolean;
+  onCardClick?: (id: string) => void;
 }
 
-export default function FeatureColumn({ status, features, isOver = false }: FeatureColumnProps) {
+export default function FeatureColumn({ status, features, isOver = false, onCardClick }: FeatureColumnProps) {
   const cfg = STATUS_CONFIG[status];
   const { setNodeRef } = useDroppable({ id: status });
 
@@ -163,7 +164,13 @@ export default function FeatureColumn({ status, features, isOver = false }: Feat
               <div style={{ fontSize: 11, color: '#CBD5E1' }}>Drag here or click + to add</div>
             </div>
           ) : (
-            features.map((feature) => <SortableCard key={feature.id} feature={feature} />)
+            features.map((feature) => (
+              <SortableCard
+                key={feature.id}
+                feature={feature}
+                onClick={() => onCardClick?.(feature.id)}
+              />
+            ))
           )}
         </SortableContext>
       </div>

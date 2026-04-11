@@ -98,3 +98,15 @@ body {
     opacity: 1;
   }
 }
+
+/* Fade-in for AI result panels */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

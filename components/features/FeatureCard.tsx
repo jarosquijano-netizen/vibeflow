@@ -50,13 +50,15 @@ function ownerInitials(name: string) {
 interface FeatureCardProps {
   feature: Feature;
   isDragging?: boolean;
+  onClick?: () => void;
 }
 
-export default function FeatureCard({ feature, isDragging = false }: FeatureCardProps) {
+export default function FeatureCard({ feature, isDragging = false, onClick }: FeatureCardProps) {
   const statusColor = STATUS_CONFIG[feature.status]?.color ?? '#94A3B8';
 
   return (
     <div
+      onClick={!isDragging ? onClick : undefined}
       style={{
         background: '#FFFFFF',
         borderLeft: `3px solid ${statusColor}`,

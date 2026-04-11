@@ -16,6 +16,7 @@ import { Search, Kanban, LayoutList } from 'lucide-react';
 import type { Feature } from '@/types';
 import FeatureCard, { STATUS_CONFIG } from './FeatureCard';
 import FeatureColumn from './FeatureColumn';
+import FeatureDetailPanel from './FeatureDetailPanel';
 
 /* ------------------------------------------------------------------ */
 /*  Sample data                                                         */
@@ -64,12 +65,20 @@ export default function FeatureBoard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
+  const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
   const activeFeature = features.find((f) => f.id === activeId) ?? null;
+  const selectedFeature = features.find((f) => f.id === selectedFeatureId) ?? null;
+
+  function handleSizeAccepted(featureId: string, size: string) {
+    setFeatures((prev) =>
+      prev.map((f) => f.id === featureId ? { ...f, size: size as Feature['size'] } : f)
+    );
+  }
 
   /* Filtered features */
   const filtered = features.filter((f) => {
@@ -282,6 +291,7 @@ export default function FeatureBoard() {
               status={status}
               features={filtered.filter((f) => f.status === status)}
               isOver={overId === status}
+              onCardClick={(id) => setSelectedFeatureId(id)}
             />
           ))}
         </div>
@@ -295,6 +305,13 @@ export default function FeatureBoard() {
           )}
         </DragOverlay>
       </DndContext>
+
+      {/* Feature detail panel */}
+      <FeatureDetailPanel
+        feature={selectedFeature}
+        onClose={() => setSelectedFeatureId(null)}
+        onSizeAccepted={handleSizeAccepted}
+      />
     </div>
   );
 }
