@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { vibeToast } from '@/components/polish/toasts';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -81,9 +82,11 @@ export default function AISizeEstimator({
       if ((data as { error?: boolean }).error) throw new Error('API error');
       setResult(data);
       setUiState('result');
+      vibeToast.ai('Size estimated — ' + data.size + ' with ' + data.confidence.toLowerCase() + ' confidence');
     } catch (err) {
       console.error('[AISizeEstimator]', err);
       setUiState('idle');
+      vibeToast.error('AI estimation failed');
     }
   }
 
@@ -446,6 +449,7 @@ export default function AISizeEstimator({
                     onSizeAccepted(result.size);
                     setAccepted(true);
                     setOverridden(false);
+                    vibeToast.success('AI size estimate accepted');
                   }}
                   style={{
                     flex: 1,

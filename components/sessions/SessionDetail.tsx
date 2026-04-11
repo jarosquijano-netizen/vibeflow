@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Zap, CheckSquare } from 'lucide-react';
 import type { VibeSession, BacklogItem } from '@/types';
 import BacklogItemRow from './BacklogItemRow';
+import { vibeToast } from '@/components/polish/toasts';
 
 /* ------------------------------------------------------------------ */
 /*  Config                                                              */
@@ -221,6 +222,7 @@ function SessionDetailInner({
     setJiraSyncedIds(merged);
     save({ jiraSyncedIds: merged });
     setSyncedVisible(true);
+    vibeToast.success('Synced to Jira successfully');
     if (syncedTimerRef.current) clearTimeout(syncedTimerRef.current);
     syncedTimerRef.current = setTimeout(() => setSyncedVisible(false), 3000);
   }
@@ -321,7 +323,7 @@ function SessionDetailInner({
                 ● Closed
               </div>
               <button
-                onClick={() => save({ status: 'OPEN' }, 'reopened')}
+                onClick={() => { save({ status: 'OPEN' }, 'reopened'); vibeToast.info('Session reopened'); }}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -338,7 +340,7 @@ function SessionDetailInner({
             </div>
           ) : (
             <button
-              onClick={() => save({ status: 'CLOSED' }, 'closed')}
+              onClick={() => { save({ status: 'CLOSED' }, 'closed'); vibeToast.info('Session closed'); }}
               onMouseEnter={() => setCloseHovered(true)}
               onMouseLeave={() => setCloseHovered(false)}
               style={{

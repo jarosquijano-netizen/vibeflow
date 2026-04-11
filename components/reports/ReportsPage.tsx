@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Download } from 'lucide-react';
+import { vibeToast } from '@/components/polish/toasts';
 import {
   PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -84,6 +85,7 @@ function handleExportCSV() {
   a.download = 'vibeflow-features.csv';
   a.click();
   URL.revokeObjectURL(url);
+  vibeToast.success('CSV exported successfully');
 }
 
 /* ------------------------------------------------------------------ */

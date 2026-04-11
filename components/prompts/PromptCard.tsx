@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Copy, Link } from 'lucide-react';
 import type { Prompt } from '@/types';
+import { vibeToast } from '@/components/polish/toasts';
 
 /* ------------------------------------------------------------------ */
 /*  Config                                                              */
@@ -36,6 +37,7 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
     await navigator.clipboard.writeText(prompt.body);
     setCopied(true);
     onCopy(prompt.id);
+    vibeToast.success('Prompt copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   }
 

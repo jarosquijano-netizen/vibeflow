@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import type { Prompt } from '@/types';
+import { vibeToast } from '@/components/polish/toasts';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -40,6 +41,7 @@ export default function NewPromptPanel({ open, onClose, onSave }: NewPromptPanel
       usedInFeatures: [],
     };
     onSave(prompt);
+    vibeToast.success('Prompt saved to library');
     /* Reset */
     setTitle('');
     setTool('v0');
