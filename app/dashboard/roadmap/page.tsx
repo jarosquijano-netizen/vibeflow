@@ -1,9 +1,10 @@
 import DashboardShell from '@/components/layout/DashboardShell';
+import RoadmapPage from '@/components/roadmap/RoadmapPage';
 
-export default function RoadmapPage() {
+export default function RoadmapRoute() {
   return (
     <DashboardShell title="Roadmap" breadcrumb="Dashboard / Roadmap">
-      <div style={{ fontSize: 13, color: '#94A3B8' }}>Roadmap coming soon</div>
+      <RoadmapPage />
     </DashboardShell>
   );
 }
