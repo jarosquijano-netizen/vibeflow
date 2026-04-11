@@ -11,6 +11,7 @@ import "@fontsource/space-grotesk/500.css";
 import "@fontsource/space-grotesk/700.css";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { XPProvider } from "@/lib/xp-engine";
 import { VibeToaster } from "@/components/polish/toasts";
 import CommandPalette from "@/components/polish/command-palette";
 import KeyboardShortcuts from "@/components/polish/keyboard-shortcuts";
@@ -45,13 +46,15 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: antiFlashScript }} />
       </head>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider>
-          {children}
-          <VibeToaster />
-          <CommandPalette />
-          <KeyboardShortcuts />
-          <GlobalShortcuts />
-        </ThemeProvider>
+        <XPProvider>
+          <ThemeProvider>
+            {children}
+            <VibeToaster />
+            <CommandPalette />
+            <KeyboardShortcuts />
+            <GlobalShortcuts />
+          </ThemeProvider>
+        </XPProvider>
       </body>
     </html>
   );

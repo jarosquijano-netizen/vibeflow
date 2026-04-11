@@ -1,5 +1,7 @@
 'use client';
 
+import { useTheme } from '@/components/providers/ThemeProvider';
+import { useXPContext } from '@/lib/xp-engine';
 import type { VibeSession } from '@/types';
 
 interface SessionListProps {
@@ -17,7 +19,7 @@ function getMonthKey(dateStr: string): string {
   const date = new Date(year, month - 1, 1);
   return date
     .toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-    .toUpperCase(); // "JUNE 2026"
+    .toUpperCase();
 }
 
 function formatShortDate(dateStr: string): string {
@@ -36,21 +38,39 @@ function getStatusDotColor(session: VibeSession): string {
 }
 
 /* ------------------------------------------------------------------ */
-/*  SessionList                                                         */
+/*  Streak helpers                                                      */
 /* ------------------------------------------------------------------ */
-export default function SessionList({ sessions, selectedId, onSelect, onNew }: SessionListProps) {
-  /* Group by month, preserving order */
-  const monthGroups: { month: string; items: VibeSession[] }[] = [];
-  const seen = new Set<string>();
-  for (const s of sessions) {
-    const key = getMonthKey(s.date);
-    if (!seen.has(key)) {
-      seen.add(key);
-      monthGroups.push({ month: key, items: [] });
-    }
-    monthGroups[monthGroups.length - 1].items.push(s);
+function getCalendarDays(sessions: VibeSession[], streak: number): boolean[] {
+  const dates = new Set(sessions.map((s) => s.date));
+  const mostRecent = sessions[0]?.date;
+  if (!mostRecent) return Array(7).fill(false);
+
+  const days: boolean[] = [];
+  const anchor = new Date(mostRecent + 'T12:00:00');
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(anchor);
+    d.setDate(anchor.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    days.push(dates.has(dateStr));
   }
-  /* Fix: items may be pushed to wrong group if sessions are not contiguous by month */
+  return days;
+}
+
+/* XP per session (rough estimate) */
+function sessionXPEstimate(session: VibeSession): number {
+  let xp = 0;
+  if (session.goal) xp += 50;
+  if (session.prototypeUrl) xp += 100;
+  if (session.notes.worked) xp += 75;
+  xp += session.backlogItems.length * 25;
+  if (session.status === 'CLOSED') xp += 200;
+  return xp;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Build ordered month groups                                          */
+/* ------------------------------------------------------------------ */
+function buildGroups(sessions: VibeSession[]) {
   const groupMap = new Map<string, VibeSession[]>();
   for (const s of sessions) {
     const key = getMonthKey(s.date);
@@ -58,15 +78,285 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
     groupMap.get(key)!.push(s);
   }
   const orderedGroups: { month: string; items: VibeSession[] }[] = [];
-  const seenKeys = new Set<string>();
+  const seen = new Set<string>();
   for (const s of sessions) {
     const key = getMonthKey(s.date);
-    if (!seenKeys.has(key)) {
-      seenKeys.add(key);
+    if (!seen.has(key)) {
+      seen.add(key);
       orderedGroups.push({ month: key, items: groupMap.get(key)! });
     }
   }
+  return orderedGroups;
+}
 
+/* ------------------------------------------------------------------ */
+/*  SessionList                                                         */
+/* ------------------------------------------------------------------ */
+export default function SessionList({ sessions, selectedId, onSelect, onNew }: SessionListProps) {
+  const { theme } = useTheme();
+  const { xpState } = useXPContext();
+  const isCyber = theme === 'cyber';
+
+  const orderedGroups = buildGroups(sessions);
+  const calendarDays = getCalendarDays(sessions, xpState.streak);
+  const today = new Date().toISOString().slice(0, 10).slice(0, 7);
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /*  CYBER VARIANT                                                  */
+  /* ═══════════════════════════════════════════════════════════════ */
+  if (isCyber) {
+    return (
+      <div
+        style={{
+          width: 320,
+          flexShrink: 0,
+          borderRight: '1px solid rgba(59,75,61,0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          background: '#0D0D17',
+        }}
+      >
+        {/* ── Header ── */}
+        <div
+          style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid rgba(59,75,61,0.3)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: 14,
+              fontWeight: 700,
+              color: '#E4E1E9',
+            }}
+          >
+            VIBE_SESSIONS
+          </span>
+          <button
+            onClick={onNew}
+            style={{
+              height: 28,
+              paddingLeft: 10,
+              paddingRight: 10,
+              fontSize: 12,
+              color: '#00FF88',
+              background: 'none',
+              border: '1px solid rgba(0,255,136,0.3)',
+              cursor: 'pointer',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              transition: 'all 120ms ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(0,255,136,0.1)';
+              e.currentTarget.style.borderColor = '#00FF88';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'none';
+              e.currentTarget.style.borderColor = 'rgba(0,255,136,0.3)';
+            }}
+          >
+            + NEW
+          </button>
+        </div>
+
+        {/* ── Streak Banner ── */}
+        <div
+          style={{
+            margin: '12px 16px 4px',
+            padding: '12px 16px',
+            borderRadius: 8,
+            background: 'linear-gradient(135deg, #001A10 0%, #0A0A0F 100%)',
+            border: '1px solid rgba(0,255,136,0.2)',
+            flexShrink: 0,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: 10,
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "'Space Grotesk', sans-serif",
+                fontSize: 12,
+                fontWeight: 700,
+                color: '#FFB800',
+              }}
+            >
+              🔥 {xpState.streak} DAY STREAK
+            </span>
+            <span
+              style={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 9,
+                color: '#9CA3AF',
+                textTransform: 'uppercase',
+              }}
+            >
+              {today.replace('-', '/')}
+            </span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
+            {calendarDays.map((active, i) => (
+              <div
+                key={i}
+                title={active ? 'Session logged' : 'No session'}
+                style={{
+                  aspectRatio: '1',
+                  borderRadius: 2,
+                  background: active
+                    ? 'rgba(0,255,136,0.8)'
+                    : 'rgba(0,255,136,0.1)',
+                  border: `1px solid ${active ? '#00FF88' : 'rgba(0,255,136,0.2)'}`,
+                  boxShadow: active ? '0 0 8px rgba(0,255,136,0.27)' : 'none',
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* ── Scrollable session list ── */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          {orderedGroups.map(({ month, items }) => (
+            <div key={month}>
+              {/* Month separator */}
+              <div
+                style={{
+                  position: 'sticky',
+                  top: 0,
+                  background: '#0D0D17',
+                  zIndex: 10,
+                  padding: '6px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 9,
+                    textTransform: 'uppercase',
+                    color: '#4B5563',
+                    fontWeight: 600,
+                    letterSpacing: '0.1em',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {month}
+                </span>
+                <div style={{ flex: 1, height: 1, background: 'rgba(59,75,61,0.2)' }} />
+              </div>
+
+              {/* Session items */}
+              {items.map((session) => {
+                const isSelected = session.id === selectedId;
+                const isOpen = session.status === 'OPEN';
+                const xpEst = sessionXPEstimate(session);
+
+                return (
+                  <div
+                    key={session.id}
+                    onClick={() => onSelect(session.id)}
+                    style={{
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      background: isOpen
+                        ? isSelected ? 'rgba(0,255,136,0.06)' : '#1F1F25'
+                        : isSelected ? 'rgba(27,27,32,0.7)' : 'rgba(27,27,32,0.4)',
+                      borderLeft: `4px solid ${isOpen ? '#00FF88' : '#2A2A3E'}`,
+                      opacity: isOpen ? 1 : 0.7,
+                      transition: 'opacity 120ms ease, background 120ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) e.currentTarget.style.opacity = '1';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) e.currentTarget.style.opacity = isOpen ? '1' : '0.7';
+                    }}
+                  >
+                    {/* Status label */}
+                    <div
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 10,
+                        color: isOpen ? '#00FF88' : '#4B5563',
+                        marginBottom: 4,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                      }}
+                    >
+                      {isOpen ? `IN_PROGRESS_${session.id.slice(-3)}` : `COMPLETED_${session.id.slice(-3)}`}
+                    </div>
+
+                    {/* Title */}
+                    <div
+                      style={{
+                        fontFamily: "'Space Grotesk', sans-serif",
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: isOpen ? '#FFFFFF' : '#9CA3AF',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        marginBottom: 6,
+                      }}
+                    >
+                      {session.title}
+                    </div>
+
+                    {/* Footer row */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 10,
+                          color: isOpen ? '#9CA3AF' : '#4B5563',
+                        }}
+                      >
+                        {formatShortDate(session.date)} · {session.duration}h
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontSize: 11,
+                          fontWeight: 700,
+                          color: isOpen ? '#00FF88' : '#4B5563',
+                        }}
+                      >
+                        +{xpEst} XP
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /*  DEFAULT VARIANT                                                */
+  /* ═══════════════════════════════════════════════════════════════ */
   return (
     <div
       style={{
@@ -127,7 +417,6 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {orderedGroups.map(({ month, items }) => (
           <div key={month}>
-            {/* Month separator — sticky */}
             <div
               style={{
                 position: 'sticky',
@@ -156,7 +445,6 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
               <div style={{ flex: 1, height: 1, background: '#F1F5F9' }} />
             </div>
 
-            {/* Session items */}
             {items.map((session) => {
               const isSelected = session.id === selectedId;
               const dotColor = getStatusDotColor(session);
@@ -181,7 +469,6 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                     if (!isSelected) e.currentTarget.style.background = 'transparent';
                   }}
                 >
-                  {/* Status dot */}
                   <div
                     style={{
                       position: 'absolute',
@@ -194,7 +481,6 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                     }}
                   />
 
-                  {/* Title row with status badge */}
                   <div style={{ display: 'flex', alignItems: 'center', paddingRight: 16 }}>
                     <span
                       style={{
@@ -229,14 +515,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                     </span>
                   </div>
 
-                  {/* Date + duration */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      gap: 12,
-                      marginTop: 2,
-                    }}
-                  >
+                  <div style={{ display: 'flex', gap: 12, marginTop: 2 }}>
                     <span style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>
                       {formatShortDate(session.date)}
                     </span>
@@ -245,7 +524,6 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                     </span>
                   </div>
 
-                  {/* Badges */}
                   <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
                     <span
                       style={{
