@@ -69,12 +69,12 @@
   --color-content-bg: #0A0A0F;
 
   /* Fonts */
-  --font-primary: 'Inter', sans-serif;
+  --font-primary: 'DM Sans', Arial, Helvetica, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'Space Grotesk', sans-serif;
 
   /* Legacy aliases */
-  --font-dm-sans: 'Inter', sans-serif;
+  --font-dm-sans: 'DM Sans', Arial, Helvetica, sans-serif;
   --font-jetbrains-mono: 'JetBrains Mono', monospace;
 }
 
