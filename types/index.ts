@@ -38,6 +38,7 @@ export interface VibeSession {
   date: string;
   duration: number;
   goal: string;
+  status: 'OPEN' | 'CLOSED';
   linkedFeatureIds: string[];
   promptIds: string[];
   prototypeUrl?: string;

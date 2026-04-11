@@ -172,6 +172,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                     background: isSelected ? '#EFF6FF' : 'transparent',
                     position: 'relative',
                     transition: 'background 100ms ease, border-left-color 100ms ease',
+                    opacity: session.status === 'CLOSED' ? 0.8 : 1,
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected) e.currentTarget.style.background = '#F8FAFC';
@@ -193,20 +194,39 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                     }}
                   />
 
-                  {/* Title */}
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: '#0F172A',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      paddingRight: 16,
-                      fontFamily: 'var(--font-dm-sans)',
-                    }}
-                  >
-                    {session.title}
+                  {/* Title row with status badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', paddingRight: 16 }}>
+                    <span
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: session.status === 'CLOSED' ? '#94A3B8' : '#0F172A',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        flex: 1,
+                        minWidth: 0,
+                        fontFamily: 'var(--font-dm-sans)',
+                      }}
+                    >
+                      {session.title}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: session.status === 'OPEN' ? '#16A34A' : '#94A3B8',
+                        background: session.status === 'OPEN' ? '#F0FDF4' : '#F8FAFC',
+                        border: `1px solid ${session.status === 'OPEN' ? '#BBF7D0' : '#E2E8F0'}`,
+                        padding: '2px 6px',
+                        marginLeft: 6,
+                        flexShrink: 0,
+                        fontFamily: 'var(--font-dm-sans)',
+                        fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {session.status === 'OPEN' ? '● Open' : '● Closed'}
+                    </span>
                   </div>
 
                   {/* Date + duration */}

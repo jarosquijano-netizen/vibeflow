@@ -15,9 +15,10 @@ const STATUS_CYCLE: BacklogItem['status'][] = ['TODO', 'IN_PROGRESS', 'DONE'];
 interface BacklogItemRowProps {
   item: BacklogItem;
   onChange: (updated: BacklogItem) => void;
+  readOnly?: boolean;
 }
 
-export default function BacklogItemRow({ item, onChange }: BacklogItemRowProps) {
+export default function BacklogItemRow({ item, onChange, readOnly = false }: BacklogItemRowProps) {
   const [hovered, setHovered] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(item.title);
@@ -58,7 +59,7 @@ export default function BacklogItemRow({ item, onChange }: BacklogItemRowProps) 
     >
       {/* TASK */}
       <td style={{ paddingRight: 8 }}>
-        {editingTitle ? (
+        {editingTitle && !readOnly ? (
           <input
             ref={inputRef}
             value={titleDraft}
@@ -86,13 +87,13 @@ export default function BacklogItemRow({ item, onChange }: BacklogItemRowProps) 
           />
         ) : (
           <div
-            style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'text' }}
-            onClick={() => setEditingTitle(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: readOnly ? 'default' : 'text' }}
+            onClick={() => { if (!readOnly) setEditingTitle(true); }}
           >
             <span
               style={{
                 fontSize: 13,
-                color: '#0F172A',
+                color: readOnly ? '#475569' : '#0F172A',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -104,7 +105,7 @@ export default function BacklogItemRow({ item, onChange }: BacklogItemRowProps) 
             >
               {item.title}
             </span>
-            {hovered && (
+            {hovered && !readOnly && (
               <Pencil size={12} style={{ color: '#94A3B8', flexShrink: 0 }} />
             )}
           </div>
@@ -114,8 +115,8 @@ export default function BacklogItemRow({ item, onChange }: BacklogItemRowProps) 
       {/* STATUS — click to cycle */}
       <td style={{ paddingRight: 8, whiteSpace: 'nowrap' }}>
         <button
-          onClick={cycleStatus}
-          title="Click to change status"
+          onClick={readOnly ? undefined : cycleStatus}
+          title={readOnly ? undefined : 'Click to change status'}
           style={{
             background: cfg.bg,
             color: cfg.color,
@@ -124,12 +125,12 @@ export default function BacklogItemRow({ item, onChange }: BacklogItemRowProps) 
             fontFamily: 'var(--font-dm-sans)',
             fontWeight: 500,
             border: 'none',
-            cursor: 'pointer',
+            cursor: readOnly ? 'default' : 'pointer',
             borderRadius: 0,
             transition: 'opacity 100ms ease',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.75'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+          onMouseEnter={readOnly ? undefined : (e) => { e.currentTarget.style.opacity = '0.75'; }}
+          onMouseLeave={readOnly ? undefined : (e) => { e.currentTarget.style.opacity = '1'; }}
         >
           {cfg.label}
         </button>

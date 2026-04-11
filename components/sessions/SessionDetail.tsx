@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import { ChevronDown, ChevronUp, Zap, CheckSquare } from 'lucide-react';
 import type { VibeSession, BacklogItem } from '@/types';
-import BacklogItemRow, { BACKLOG_STATUS_CONFIG } from './BacklogItemRow';
+import BacklogItemRow from './BacklogItemRow';
 
 /* ------------------------------------------------------------------ */
 /*  Config                                                              */
@@ -55,6 +55,17 @@ const PROMPTS_LOOKUP: Record<string, { title: string; tool: string; quality: num
 };
 
 /* ------------------------------------------------------------------ */
+/*  Save indicator config                                               */
+/* ------------------------------------------------------------------ */
+const SAVE_MSG = {
+  saved:    { text: 'Saved ✓',            color: '#16A34A', border: '#BBF7D0', bg: '#F0FDF4' },
+  closed:   { text: 'Session closed ✓',   color: '#DC2626', border: '#FECACA', bg: '#FEF2F2' },
+  reopened: { text: 'Session reopened ✓', color: '#2563EB', border: '#BFDBFE', bg: '#EFF6FF' },
+} as const;
+
+type SaveMsgType = keyof typeof SAVE_MSG;
+
+/* ------------------------------------------------------------------ */
 /*  Date helper                                                         */
 /* ------------------------------------------------------------------ */
 function formatFullDate(dateStr: string): string {
@@ -88,7 +99,6 @@ interface SessionDetailProps {
 }
 
 export default function SessionDetail({ session, onUpdate }: SessionDetailProps) {
-  /* Empty state */
   if (!session) {
     return (
       <div
@@ -127,6 +137,8 @@ function SessionDetailInner({
   session: VibeSession;
   onUpdate: (updated: VibeSession) => void;
 }) {
+  const isClosed = session.status === 'CLOSED';
+
   /* ── Local state ── */
   const [localTitle, setLocalTitle] = useState(session.title);
   const [localGoal, setLocalGoal] = useState(session.goal);
@@ -141,7 +153,9 @@ function SessionDetailInner({
   const [addingItem, setAddingItem] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [savedVisible, setSavedVisible] = useState(false);
+  const [savedMsgType, setSavedMsgType] = useState<SaveMsgType>('saved');
   const [syncedVisible, setSyncedVisible] = useState(false);
+  const [closeHovered, setCloseHovered] = useState(false);
 
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -153,8 +167,16 @@ function SessionDetailInner({
     };
   }, []);
 
+  /* ── Show save indicator ── */
+  function showSave(type: SaveMsgType) {
+    setSavedMsgType(type);
+    setSavedVisible(true);
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setSavedVisible(false), 3000);
+  }
+
   /* ── Save helper ── */
-  function save(overrides: Partial<VibeSession> = {}) {
+  function save(overrides: Partial<VibeSession> = {}, msgType: SaveMsgType = 'saved') {
     const updated: VibeSession = {
       ...session,
       title: localTitle,
@@ -167,9 +189,7 @@ function SessionDetailInner({
       ...overrides,
     };
     onUpdate(updated);
-    setSavedVisible(true);
-    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
-    savedTimerRef.current = setTimeout(() => setSavedVisible(false), 3000);
+    showSave(msgType);
   }
 
   /* ── Add backlog item ── */
@@ -205,8 +225,11 @@ function SessionDetailInner({
     syncedTimerRef.current = setTimeout(() => setSyncedVisible(false), 3000);
   }
 
+  const saveMsgCfg = SAVE_MSG[savedMsgType];
+
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: '#FFFFFF', position: 'relative' }}>
+
       {/* ── Saved indicator ── */}
       <div
         style={{
@@ -214,9 +237,9 @@ function SessionDetailInner({
           top: 16,
           right: 24,
           zIndex: 100,
-          background: '#F0FDF4',
-          border: '1px solid #BBF7D0',
-          color: '#16A34A',
+          background: saveMsgCfg.bg,
+          border: `1px solid ${saveMsgCfg.border}`,
+          color: saveMsgCfg.color,
           fontSize: 12,
           padding: '4px 12px',
           fontFamily: 'var(--font-dm-sans)',
@@ -225,7 +248,7 @@ function SessionDetailInner({
           pointerEvents: 'none',
         }}
       >
-        Saved ✓
+        {saveMsgCfg.text}
       </div>
 
       {/* ── Synced toast ── */}
@@ -255,24 +278,92 @@ function SessionDetailInner({
           borderBottom: '1px solid #F1F5F9',
         }}
       >
-        {/* Title */}
-        <input
-          value={localTitle}
-          onChange={(e) => setLocalTitle(e.target.value)}
-          onBlur={() => save({ title: localTitle })}
-          placeholder="Session title..."
-          style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: '#0F172A',
-            width: '100%',
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            fontFamily: 'var(--font-dm-sans)',
-            padding: 0,
-          }}
-        />
+        {/* Title row + Close/Reopen button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <input
+            value={localTitle}
+            onChange={(e) => { if (!isClosed) setLocalTitle(e.target.value); }}
+            onBlur={() => { if (!isClosed) save({ title: localTitle }); }}
+            readOnly={isClosed}
+            placeholder="Session title..."
+            style={{
+              flex: 1,
+              fontSize: 20,
+              fontWeight: 700,
+              color: '#0F172A',
+              border: 'none',
+              outline: 'none',
+              background: 'transparent',
+              fontFamily: 'var(--font-dm-sans)',
+              padding: 0,
+              cursor: isClosed ? 'default' : 'text',
+            }}
+          />
+
+          {/* Status button */}
+          {isClosed ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  height: 28,
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  background: '#F8FAFC',
+                  border: '1px solid #E2E8F0',
+                  color: '#94A3B8',
+                  fontSize: 12,
+                  fontFamily: 'var(--font-dm-sans)',
+                }}
+              >
+                ● Closed
+              </div>
+              <button
+                onClick={() => save({ status: 'OPEN' }, 'reopened')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563EB',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  padding: 0,
+                  fontFamily: 'var(--font-dm-sans)',
+                }}
+              >
+                Reopen
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => save({ status: 'CLOSED' }, 'closed')}
+              onMouseEnter={() => setCloseHovered(true)}
+              onMouseLeave={() => setCloseHovered(false)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                height: 28,
+                paddingLeft: 12,
+                paddingRight: 12,
+                background: closeHovered ? '#FEF2F2' : '#FFFFFF',
+                border: `1px solid ${closeHovered ? '#DC2626' : '#E2E8F0'}`,
+                color: closeHovered ? '#DC2626' : '#475569',
+                fontSize: 12,
+                cursor: 'pointer',
+                borderRadius: 0,
+                fontFamily: 'var(--font-dm-sans)',
+                flexShrink: 0,
+                transition: 'all 100ms ease',
+              }}
+            >
+              <CheckSquare size={16} />
+              Close Session
+            </button>
+          )}
+        </div>
 
         {/* Meta row */}
         <div
@@ -289,7 +380,7 @@ function SessionDetailInner({
           </span>
 
           {/* Duration click-to-edit */}
-          {editingDuration ? (
+          {!isClosed && editingDuration ? (
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <input
                 autoFocus
@@ -324,13 +415,13 @@ function SessionDetailInner({
             </span>
           ) : (
             <span
-              onClick={() => setEditingDuration(true)}
+              onClick={() => { if (!isClosed) setEditingDuration(true); }}
               style={{
                 fontSize: 12,
                 color: '#94A3B8',
-                cursor: 'text',
+                cursor: isClosed ? 'default' : 'text',
                 fontFamily: 'var(--font-dm-sans)',
-                borderBottom: '1px dashed #E2E8F0',
+                borderBottom: isClosed ? 'none' : '1px dashed #E2E8F0',
               }}
             >
               {localDuration} hours
@@ -338,6 +429,28 @@ function SessionDetailInner({
           )}
         </div>
       </div>
+
+      {/* ── Read-only banner — CLOSED only ── */}
+      {isClosed && (
+        <div
+          style={{
+            background: '#F8FAFC',
+            borderBottom: '1px solid #E2E8F0',
+            padding: '8px 24px',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              color: '#94A3B8',
+              fontStyle: 'italic',
+              fontFamily: 'var(--font-dm-sans)',
+            }}
+          >
+            This session is closed. Reopen to make edits.
+          </span>
+        </div>
+      )}
 
       {/* ── SECTIONS ── */}
       <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -347,8 +460,9 @@ function SessionDetailInner({
           <span style={sectionLabel}>Session Goal</span>
           <textarea
             value={localGoal}
-            onChange={(e) => setLocalGoal(e.target.value)}
-            onBlur={() => save({ goal: localGoal })}
+            onChange={(e) => { if (!isClosed) setLocalGoal(e.target.value); }}
+            onBlur={() => { if (!isClosed) save({ goal: localGoal }); }}
+            readOnly={isClosed}
             placeholder="What are you trying to build in this session?"
             rows={3}
             style={{
@@ -363,10 +477,11 @@ function SessionDetailInner({
               paddingBottom: 4,
               paddingRight: 0,
               fontSize: 14,
-              color: '#0F172A',
+              color: isClosed ? '#475569' : '#0F172A',
               lineHeight: 1.6,
               fontFamily: 'var(--font-dm-sans)',
               background: 'transparent',
+              cursor: isClosed ? 'default' : 'text',
             }}
           />
         </div>
@@ -394,9 +509,7 @@ function SessionDetailInner({
                 color: '#94A3B8',
               }}
             >
-              {featuresOpen
-                ? <ChevronUp size={14} />
-                : <ChevronDown size={14} />}
+              {featuresOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
           </div>
 
@@ -464,24 +577,27 @@ function SessionDetailInner({
                   </div>
                 );
               })}
-              {/* + Link feature ghost chip */}
-              <div
-                style={{
-                  width: 120,
-                  flexShrink: 0,
-                  border: '1px dashed #E2E8F0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 12,
-                  color: '#94A3B8',
-                  cursor: 'pointer',
-                  padding: '8px 12px',
-                  fontFamily: 'var(--font-dm-sans)',
-                }}
-              >
-                + Link feature
-              </div>
+
+              {/* + Link feature — hide when closed */}
+              {!isClosed && (
+                <div
+                  style={{
+                    width: 120,
+                    flexShrink: 0,
+                    border: '1px dashed #E2E8F0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    color: '#94A3B8',
+                    cursor: 'pointer',
+                    padding: '8px 12px',
+                    fontFamily: 'var(--font-dm-sans)',
+                  }}
+                >
+                  + Link feature
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -507,7 +623,6 @@ function SessionDetailInner({
                     flexShrink: 0,
                   }}
                 >
-                  {/* Tool dot */}
                   <div
                     style={{
                       width: 6,
@@ -517,7 +632,6 @@ function SessionDetailInner({
                       flexShrink: 0,
                     }}
                   />
-                  {/* Title */}
                   <span
                     style={{
                       fontSize: 12,
@@ -531,7 +645,6 @@ function SessionDetailInner({
                   >
                     {prompt.title.slice(0, 20)}{prompt.title.length > 20 ? '...' : ''}
                   </span>
-                  {/* Stars */}
                   <span style={{ fontSize: 10, flexShrink: 0 }}>
                     {[1, 2, 3, 4, 5].map((s) => (
                       <span key={s} style={{ color: s <= prompt.quality ? '#D97706' : '#E2E8F0' }}>★</span>
@@ -540,22 +653,25 @@ function SessionDetailInner({
                 </div>
               );
             })}
-            {/* + Add prompt ghost chip */}
-            <div
-              style={{
-                border: '1px dashed #E2E8F0',
-                padding: '6px 12px',
-                fontSize: 12,
-                color: '#94A3B8',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                flexShrink: 0,
-                fontFamily: 'var(--font-dm-sans)',
-              }}
-            >
-              + Add prompt
-            </div>
+
+            {/* + Add prompt — hide when closed */}
+            {!isClosed && (
+              <div
+                style={{
+                  border: '1px dashed #E2E8F0',
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  color: '#94A3B8',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexShrink: 0,
+                  fontFamily: 'var(--font-dm-sans)',
+                }}
+              >
+                + Add prompt
+              </div>
+            )}
           </div>
         </div>
 
@@ -565,14 +681,15 @@ function SessionDetailInner({
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               value={localProtoUrl}
-              onChange={(e) => setLocalProtoUrl(e.target.value)}
-              onBlur={() => save({ prototypeUrl: localProtoUrl || undefined })}
+              onChange={(e) => { if (!isClosed) setLocalProtoUrl(e.target.value); }}
+              onBlur={() => { if (!isClosed) save({ prototypeUrl: localProtoUrl || undefined }); }}
+              readOnly={isClosed}
               placeholder="https://v0.dev/t/..."
               style={{
                 flex: 1,
                 height: 32,
                 border: '1px solid #E2E8F0',
-                background: '#F1F5F9',
+                background: isClosed ? 'transparent' : '#F1F5F9',
                 paddingLeft: 12,
                 paddingRight: 12,
                 fontSize: 13,
@@ -580,8 +697,9 @@ function SessionDetailInner({
                 borderRadius: 0,
                 fontFamily: 'var(--font-dm-sans)',
                 color: '#0F172A',
+                cursor: isClosed ? 'default' : 'text',
               }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#2563EB'; }}
+              onFocus={(e) => { if (!isClosed) e.currentTarget.style.borderColor = '#2563EB'; }}
               onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; }}
             />
             <button
@@ -608,7 +726,6 @@ function SessionDetailInner({
           {/* Browser mockup */}
           {localProtoUrl && (
             <div style={{ marginTop: 8, border: '1px solid #E2E8F0' }}>
-              {/* URL bar */}
               <div
                 style={{
                   background: '#F1F5F9',
@@ -638,7 +755,6 @@ function SessionDetailInner({
                   {localProtoUrl}
                 </span>
               </div>
-              {/* Content area */}
               <div
                 style={{
                   height: 80,
@@ -678,8 +794,9 @@ function SessionDetailInner({
               </span>
               <textarea
                 value={localWorked}
-                onChange={(e) => setLocalWorked(e.target.value)}
-                onBlur={() => save({ notes: { worked: localWorked, improve: localImprove } })}
+                onChange={(e) => { if (!isClosed) setLocalWorked(e.target.value); }}
+                onBlur={() => { if (!isClosed) save({ notes: { worked: localWorked, improve: localImprove } }); }}
+                readOnly={isClosed}
                 placeholder="What went well..."
                 style={{
                   width: '100%',
@@ -693,10 +810,11 @@ function SessionDetailInner({
                   paddingBottom: 4,
                   paddingRight: 0,
                   fontSize: 13,
-                  color: '#0F172A',
+                  color: isClosed ? '#475569' : '#0F172A',
                   lineHeight: 1.6,
                   fontFamily: 'var(--font-dm-sans)',
                   background: 'transparent',
+                  cursor: isClosed ? 'default' : 'text',
                 }}
               />
             </div>
@@ -719,8 +837,9 @@ function SessionDetailInner({
               </span>
               <textarea
                 value={localImprove}
-                onChange={(e) => setLocalImprove(e.target.value)}
-                onBlur={() => save({ notes: { worked: localWorked, improve: localImprove } })}
+                onChange={(e) => { if (!isClosed) setLocalImprove(e.target.value); }}
+                onBlur={() => { if (!isClosed) save({ notes: { worked: localWorked, improve: localImprove } }); }}
+                readOnly={isClosed}
                 placeholder="What to do better next time..."
                 style={{
                   width: '100%',
@@ -734,10 +853,11 @@ function SessionDetailInner({
                   paddingBottom: 4,
                   paddingRight: 0,
                   fontSize: 13,
-                  color: '#0F172A',
+                  color: isClosed ? '#475569' : '#0F172A',
                   lineHeight: 1.6,
                   fontFamily: 'var(--font-dm-sans)',
                   background: 'transparent',
+                  cursor: isClosed ? 'default' : 'text',
                 }}
               />
             </div>
@@ -774,6 +894,7 @@ function SessionDetailInner({
                 <BacklogItemRow
                   key={item.id}
                   item={item}
+                  readOnly={isClosed}
                   onChange={(updated) => {
                     const next = backlogItems.map((b) => b.id === updated.id ? updated : b);
                     setBacklogItems(next);
@@ -782,57 +903,59 @@ function SessionDetailInner({
                 />
               ))}
 
-              {/* Add row */}
-              {addingItem ? (
-                <tr style={{ height: 32 }}>
-                  <td colSpan={3}>
-                    <input
-                      autoFocus
-                      value={newItemTitle}
-                      onChange={(e) => setNewItemTitle(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') commitNewItem();
-                        if (e.key === 'Escape') {
-                          setAddingItem(false);
-                          setNewItemTitle('');
-                        }
-                      }}
-                      onBlur={commitNewItem}
-                      placeholder="New backlog item title..."
-                      style={{
-                        width: '100%',
-                        height: 28,
-                        border: '1px solid #E2E8F0',
-                        background: '#F1F5F9',
-                        paddingLeft: 8,
-                        fontSize: 13,
-                        outline: 'none',
-                        borderRadius: 0,
-                        fontFamily: 'var(--font-dm-sans)',
-                        color: '#0F172A',
-                      }}
-                    />
-                  </td>
-                </tr>
-              ) : (
-                <tr style={{ height: 32, borderTop: '1px dashed #E2E8F0' }}>
-                  <td colSpan={3}>
-                    <button
-                      onClick={() => setAddingItem(true)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        fontSize: 12,
-                        color: '#2563EB',
-                        cursor: 'pointer',
-                        padding: 0,
-                        fontFamily: 'var(--font-dm-sans)',
-                      }}
-                    >
-                      + Create backlog item
-                    </button>
-                  </td>
-                </tr>
+              {/* Add row — hide when closed */}
+              {!isClosed && (
+                addingItem ? (
+                  <tr style={{ height: 32 }}>
+                    <td colSpan={3}>
+                      <input
+                        autoFocus
+                        value={newItemTitle}
+                        onChange={(e) => setNewItemTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') commitNewItem();
+                          if (e.key === 'Escape') {
+                            setAddingItem(false);
+                            setNewItemTitle('');
+                          }
+                        }}
+                        onBlur={commitNewItem}
+                        placeholder="New backlog item title..."
+                        style={{
+                          width: '100%',
+                          height: 28,
+                          border: '1px solid #E2E8F0',
+                          background: '#F1F5F9',
+                          paddingLeft: 8,
+                          fontSize: 13,
+                          outline: 'none',
+                          borderRadius: 0,
+                          fontFamily: 'var(--font-dm-sans)',
+                          color: '#0F172A',
+                        }}
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  <tr style={{ height: 32, borderTop: '1px dashed #E2E8F0' }}>
+                    <td colSpan={3}>
+                      <button
+                        onClick={() => setAddingItem(true)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          fontSize: 12,
+                          color: '#2563EB',
+                          cursor: 'pointer',
+                          padding: 0,
+                          fontFamily: 'var(--font-dm-sans)',
+                        }}
+                      >
+                        + Create backlog item
+                      </button>
+                    </td>
+                  </tr>
+                )
               )}
             </tbody>
           </table>
@@ -846,42 +969,45 @@ function SessionDetailInner({
                 ? `${jiraSyncedIds.length} item${jiraSyncedIds.length !== 1 ? 's' : ''} synced to Jira`
                 : 'Not synced yet'}
             </span>
-            <button
-              onClick={handleJiraSync}
-              style={{
-                height: 32,
-                paddingLeft: 12,
-                paddingRight: 12,
-                background: '#FFFFFF',
-                border: '1px solid #E2E8F0',
-                color: '#0F172A',
-                fontSize: 13,
-                cursor: 'pointer',
-                borderRadius: 0,
-                fontFamily: 'var(--font-dm-sans)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
-            >
-              {/* Jira icon placeholder */}
-              <div
+
+            {/* Sync button — hide when closed */}
+            {!isClosed && (
+              <button
+                onClick={handleJiraSync}
                 style={{
-                  width: 14,
-                  height: 14,
-                  background: '#2563EB',
+                  height: 32,
+                  paddingLeft: 12,
+                  paddingRight: 12,
+                  background: '#FFFFFF',
+                  border: '1px solid #E2E8F0',
+                  color: '#0F172A',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  borderRadius: 0,
+                  fontFamily: 'var(--font-dm-sans)',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
+                  gap: 6,
                 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
               >
-                <span style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>J</span>
-              </div>
-              Sync to Jira
-            </button>
+                <div
+                  style={{
+                    width: 14,
+                    height: 14,
+                    background: '#2563EB',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>J</span>
+                </div>
+                Sync to Jira
+              </button>
+            )}
           </div>
 
           {/* Synced ID chips */}
