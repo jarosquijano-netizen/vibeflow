@@ -771,7 +771,15 @@ function SessionDetailInner({
             </thead>
             <tbody>
               {backlogItems.map((item) => (
-                <BacklogItemRow key={item.id} item={item} />
+                <BacklogItemRow
+                  key={item.id}
+                  item={item}
+                  onChange={(updated) => {
+                    const next = backlogItems.map((b) => b.id === updated.id ? updated : b);
+                    setBacklogItems(next);
+                    save({ backlogItems: next });
+                  }}
+                />
               ))}
 
               {/* Add row */}
