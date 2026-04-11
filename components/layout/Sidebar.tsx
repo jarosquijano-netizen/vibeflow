@@ -15,7 +15,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Gamepad2,
 } from 'lucide-react';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 /* ------------------------------------------------------------------ */
 /*  Nav config                                                          */
@@ -46,11 +48,10 @@ const NAV_GROUPS = [
   },
 ] as const;
 
-/* Fake error count — wire up to real state later */
 const SYNC_ERROR_COUNT = 0;
 
 /* ------------------------------------------------------------------ */
-/*  Single nav item                                                     */
+/*  Default NavItem                                                     */
 /* ------------------------------------------------------------------ */
 function NavItem({
   href,
@@ -126,6 +127,89 @@ function NavItem({
 }
 
 /* ------------------------------------------------------------------ */
+/*  Cyber NavItem                                                       */
+/* ------------------------------------------------------------------ */
+function CyberNavItem({
+  href,
+  label,
+  icon: Icon,
+  isActive,
+  collapsed,
+  isLive,
+}: {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+  isActive: boolean;
+  collapsed: boolean;
+  isLive?: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  const active = isActive || hovered;
+
+  return (
+    <Link
+      href={href}
+      data-nav-active={isActive ? 'true' : undefined}
+      title={collapsed ? label : undefined}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: collapsed ? 'center' : 'space-between',
+        height: 44,
+        paddingLeft: collapsed ? 0 : 16,
+        paddingRight: collapsed ? 0 : 16,
+        fontFamily: "'Space Grotesk', sans-serif",
+        fontSize: 14,
+        fontWeight: 500,
+        color: active ? '#00FF88' : '#4B5563',
+        background: active ? '#1F1F25' : 'transparent',
+        borderRight: isActive ? '2px solid #00FF88' : '2px solid transparent',
+        textDecoration: 'none',
+        transition: 'all 100ms ease',
+        cursor: 'pointer',
+        flexShrink: 0,
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Icon
+          size={16}
+          style={{ color: active ? '#00FF88' : '#4B5563', display: 'block', flexShrink: 0 }}
+        />
+        {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{label}</span>}
+      </div>
+      {!collapsed && isLive && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+          <span
+            className="animate-blink"
+            style={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: '#00FF88',
+              boxShadow: '0 0 6px rgba(0,255,136,0.6)',
+              display: 'inline-block',
+            }}
+          />
+          <span
+            style={{
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 9,
+              color: '#00FF88',
+              letterSpacing: '0.06em',
+            }}
+          >
+            LIVE
+          </span>
+        </div>
+      )}
+    </Link>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Sidebar                                                             */
 /* ------------------------------------------------------------------ */
 const STORAGE_KEY = 'vibeflow-sidebar-collapsed';
@@ -135,8 +219,8 @@ export default function Sidebar() {
   const [mounted, setMounted] = useState(false);
   const [userHovered, setUserHovered] = useState(false);
   const pathname = usePathname();
+  const { theme } = useTheme();
 
-  /* Hydrate from localStorage after mount to avoid SSR mismatch */
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'true') setCollapsed(true);
@@ -149,9 +233,324 @@ export default function Sidebar() {
     localStorage.setItem(STORAGE_KEY, String(next));
   }
 
-  /* Render at expanded width before mount to avoid layout shift */
   const width = mounted ? (collapsed ? 56 : 220) : 220;
 
+  /* ═══════════════════════════════════════════════════════════════ */
+  /*  CYBER SIDEBAR                                                  */
+  /* ═══════════════════════════════════════════════════════════════ */
+  if (theme === 'cyber') {
+    return (
+      <aside
+        style={{
+          width,
+          minWidth: width,
+          maxWidth: width,
+          height: '100vh',
+          background: '#0D0D17',
+          borderRight: '1px solid rgba(59,75,61,0.3)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          transition: 'width 200ms ease, min-width 200ms ease, max-width 200ms ease',
+          flexShrink: 0,
+        }}
+      >
+        {/* ── Wordmark ── */}
+        <div
+          style={{
+            padding: collapsed ? '16px 0' : '24px 24px 16px',
+            flexShrink: 0,
+            minHeight: 72,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+          }}
+        >
+          {!collapsed ? (
+            <>
+              <div
+                style={{
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: 24,
+                  fontWeight: 700,
+                  lineHeight: 1.1,
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                <span style={{ color: '#00FF88' }}>VIBE</span>
+                <span style={{ color: '#BF00FF' }}>FLOW</span>
+              </div>
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  color: '#4B5563',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.12em',
+                  marginTop: 4,
+                }}
+              >
+                v0.1 // core_system
+              </div>
+            </>
+          ) : (
+            <div style={{ width: 24, height: 24, margin: '0 auto' }} />
+          )}
+        </div>
+
+        {/* ── User Card ── */}
+        {!collapsed && (
+          <div style={{ paddingLeft: 16, paddingRight: 16, marginBottom: 12, flexShrink: 0 }}>
+            <div
+              style={{
+                background: '#1E1E2E',
+                border: '1px solid rgba(59,75,61,0.5)',
+                borderRadius: 12,
+                padding: 12,
+              }}
+            >
+              {/* Avatar + identity */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: '#2A2A3E',
+                      border: '2px solid #00FF88',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#00FF88',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                    }}
+                  >
+                    JD
+                  </div>
+                  <span
+                    style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      right: 0,
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      background: '#00FF88',
+                      border: '2px solid #0D0D17',
+                      boxShadow: '0 0 6px rgba(0,255,136,0.6)',
+                    }}
+                  />
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontFamily: "'Space Grotesk', sans-serif",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#E4E1E9',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.04em',
+                      lineHeight: 1.2,
+                      marginBottom: 4,
+                    }}
+                  >
+                    OPERATOR
+                  </div>
+                  <span
+                    style={{
+                      background: 'rgba(0,255,136,0.1)',
+                      border: '1px solid rgba(0,255,136,0.2)',
+                      borderRadius: 4,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 10,
+                      color: '#00FF88',
+                      padding: '2px 6px',
+                    }}
+                  >
+                    LVL 7
+                  </span>
+                </div>
+              </div>
+
+              {/* XP bar */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 9,
+                      color: '#4B5563',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.08em',
+                    }}
+                  >
+                    PROGRESS
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'JetBrains Mono', monospace",
+                      fontSize: 9,
+                      color: '#00FF88',
+                    }}
+                  >
+                    2,450 / 3,000 XP
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: 4,
+                    background: '#35343A',
+                    borderRadius: 999,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <div
+                    style={{
+                      height: '100%',
+                      width: '82%',
+                      background: 'linear-gradient(90deg, #00FF88, #3CD7FF)',
+                      borderRadius: 999,
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Nav ── */}
+        <nav style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', paddingBottom: 8 }}>
+          {NAV_GROUPS.map((group) => (
+            <div key={group.label}>
+              {!collapsed && (
+                <div
+                  style={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 9,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: '#4B5563',
+                    paddingLeft: 16,
+                    paddingRight: 16,
+                    marginBottom: 2,
+                    marginTop: 16,
+                  }}
+                >
+                  {group.label}
+                </div>
+              )}
+              {(group.items as ReadonlyArray<{
+                label: string;
+                href: string;
+                icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+                errorDot?: boolean;
+              }>).map((item) => (
+                <CyberNavItem
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                  icon={item.icon}
+                  isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
+                  collapsed={collapsed}
+                />
+              ))}
+              {group.label === 'Workspace' && (
+                <CyberNavItem
+                  href="/dashboard/arcade"
+                  label="ARCADE"
+                  icon={Gamepad2}
+                  isActive={pathname === '/dashboard/arcade'}
+                  collapsed={collapsed}
+                  isLive
+                />
+              )}
+            </div>
+          ))}
+        </nav>
+
+        {/* ── Bottom ── */}
+        <div style={{ flexShrink: 0 }}>
+          {/* Leaderboard widget */}
+          {!collapsed && (
+            <div
+              style={{
+                margin: '0 16px 12px',
+                background: '#1B1B20',
+                border: '1px solid rgba(59,75,61,0.2)',
+                borderRadius: 8,
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "'Space Grotesk', sans-serif",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: '#00FF88',
+                }}
+              >
+                🏆 #3 THIS WEEK
+              </span>
+              <span
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 10,
+                  color: '#00FF88',
+                  letterSpacing: '0.04em',
+                }}
+              >
+                ↑2
+              </span>
+            </div>
+          )}
+
+          {/* Collapse toggle */}
+          <button
+            onClick={toggleCollapsed}
+            style={{
+              width: '100%',
+              height: 32,
+              background: 'none',
+              border: 'none',
+              borderTop: '1px solid rgba(59,75,61,0.3)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              color: '#4B5563',
+              fontSize: 11,
+              fontFamily: "'JetBrains Mono', monospace",
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              transition: 'color 150ms ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#00FF88'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#4B5563'; }}
+          >
+            {collapsed ? (
+              <ChevronRight size={14} />
+            ) : (
+              <>
+                <ChevronLeft size={14} />
+                <span>COLLAPSE</span>
+              </>
+            )}
+          </button>
+        </div>
+      </aside>
+    );
+  }
+
+  /* ═══════════════════════════════════════════════════════════════ */
+  /*  DEFAULT SIDEBAR                                                */
+  /* ═══════════════════════════════════════════════════════════════ */
   return (
     <aside
       style={{
@@ -188,7 +587,6 @@ export default function Sidebar() {
             <div style={{ fontSize: 10, color: '#475569', marginTop: 2 }}>v0.1</div>
           </>
         ) : (
-          /* Keep consistent height when collapsed */
           <div style={{ width: 24, height: 24 }} />
         )}
       </div>
@@ -235,7 +633,6 @@ export default function Sidebar() {
 
       {/* ── Bottom ── */}
       <div style={{ flexShrink: 0 }}>
-        {/* Separator */}
         <div style={{ height: 1, background: '#1B3A6B', margin: '0 0' }} />
 
         {/* User row */}
@@ -253,7 +650,6 @@ export default function Sidebar() {
           onMouseEnter={() => setUserHovered(true)}
           onMouseLeave={() => setUserHovered(false)}
         >
-          {/* Avatar */}
           <div
             style={{
               width: 32,

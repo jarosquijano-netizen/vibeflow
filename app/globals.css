@@ -44,51 +44,55 @@
 /*  CYBER THEME                                                          */
 /* ------------------------------------------------------------------ */
 [data-theme="cyber"] {
-  --color-bg-base: #131318;
+  --color-bg-base: #0A0A0F;
   --color-bg-surface: #1F1F25;
-  --color-bg-subtle: #1B1B20;
+  --color-bg-subtle: #1E1E2E;
   --color-bg-overlay: #0D0D17;
+  --color-sidebar: #0D0D17;
+  --color-header: #0D0D17;
   --color-accent: #00FF88;
   --color-accent-hover: #00CC6A;
-  --color-accent-light: rgba(0, 255, 136, 0.1);
+  --color-accent-light: rgba(0,255,136,0.1);
+  --color-accent-secondary: #BF00FF;
+  --color-accent-tertiary: #3CD7FF;
   --color-success: #00FF88;
   --color-warning: #FFB800;
   --color-danger: #FF4444;
   --color-ai: #BF00FF;
-  --color-ai-light: rgba(191, 0, 255, 0.1);
-  --color-text-primary: #F8F8F2;
+  --color-ai-light: rgba(191,0,255,0.1);
+  --color-text-primary: #E4E1E9;
   --color-text-secondary: #9CA3AF;
   --color-text-muted: #4B5563;
-  --color-border: #2A2A3E;
-  --color-border-strong: #3B4B3D;
+  --color-text-mono: #9CA3AF;
+  --color-border: rgba(59,75,61,0.3);
+  --color-border-strong: rgba(59,75,61,0.6);
   --color-content-bg: #0A0A0F;
 
   /* Fonts */
   --font-primary: 'Inter', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono: 'JetBrains Mono', monospace;
   --font-display: 'Space Grotesk', sans-serif;
 
-  /* Legacy aliases keep working in cyber too */
+  /* Legacy aliases */
   --font-dm-sans: 'Inter', sans-serif;
-  --font-jetbrains-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-jetbrains-mono: 'JetBrains Mono', monospace;
 }
 
-/* Scanline overlay — cyber only */
+/* Dot grid for main content area */
+[data-theme="cyber"] main {
+  background-image: radial-gradient(#1e1e2e 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Scanline overlay */
 [data-theme="cyber"] body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: linear-gradient(
-      rgba(18, 16, 16, 0) 50%,
-      rgba(0, 0, 0, 0.15) 50%
-    ),
-    linear-gradient(
-      90deg,
-      rgba(255, 0, 0, 0.03),
-      rgba(0, 255, 0, 0.01),
-      rgba(0, 0, 255, 0.03)
-    );
-  background-size: 100% 3px, 3px 100%;
+  background:
+    linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%),
+    linear-gradient(90deg, rgba(255,0,0,0.02), rgba(0,255,0,0.01), rgba(0,0,255,0.02));
+  background-size: 100% 2px, 3px 100%;
   pointer-events: none;
   z-index: 9999;
   opacity: 0.4;
@@ -104,19 +108,66 @@
   font-family: var(--font-mono);
 }
 
-/* Cyber neon glow helpers */
+/* Neon glow utilities */
+[data-theme="cyber"] .glow-green {
+  box-shadow: 0 0 15px rgba(0,255,136,0.4);
+}
+[data-theme="cyber"] .glow-purple {
+  box-shadow: 0 0 15px rgba(191,0,255,0.4);
+}
+
+/* Legacy neon helpers */
 [data-theme="cyber"] .neon-glow {
   box-shadow: 0 0 12px rgba(0, 255, 136, 0.3);
 }
-
 [data-theme="cyber"] .neon-text {
   text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
 }
-
 [data-theme="cyber"] .neon-border:focus {
   border-color: #00FF88;
   box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
 }
+
+/* Active nav override (data-attribute driven) */
+[data-theme="cyber"] [data-nav-active="true"] {
+  background: #1F1F25 !important;
+  color: #00FF88 !important;
+  border-right: 2px solid #00FF88 !important;
+  border-left: none !important;
+}
+
+/* Input terminal style */
+[data-theme="cyber"] input[type="text"],
+[data-theme="cyber"] input[type="search"] {
+  background: #1E1E2E;
+  border: none;
+  border-bottom: 2px solid rgba(59,75,61,0.3);
+  border-radius: 0;
+  color: #E4E1E9;
+  font-family: 'JetBrains Mono', monospace;
+}
+[data-theme="cyber"] input:focus {
+  border-bottom-color: #00FF88;
+  box-shadow: none;
+  outline: none;
+}
+
+/* Primary button glow */
+[data-theme="cyber"] button[data-variant="primary"]:hover {
+  box-shadow: 0 0 20px rgba(0,255,136,0.5);
+}
+
+/* Card hover glow */
+[data-theme="cyber"] [data-card]:hover {
+  border-color: rgba(0,255,136,0.3);
+  box-shadow: 0 0 20px rgba(0,255,136,0.08);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-blink { animation: blink 1.5s infinite; }
 
 /* ------------------------------------------------------------------ */
 /*  Tailwind theme bridge                                               */

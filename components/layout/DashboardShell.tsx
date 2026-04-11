@@ -21,7 +21,7 @@ export default function DashboardShell({ children, title, breadcrumb }: Dashboar
             style={{
               flex: 1,
               overflowY: 'auto',
-              background: 'var(--color-content-bg)',
+              backgroundColor: 'var(--color-content-bg)',
               padding: 24,
             }}
           >
