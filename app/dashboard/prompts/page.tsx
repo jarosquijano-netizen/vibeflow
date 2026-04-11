@@ -1,9 +1,10 @@
 import DashboardShell from '@/components/layout/DashboardShell';
+import PromptLibrary from '@/components/prompts/PromptLibrary';
 
 export default function PromptsPage() {
   return (
     <DashboardShell title="Prompt Library" breadcrumb="Dashboard / Prompt Library">
-      <div style={{ fontSize: 13, color: '#94A3B8' }}>Prompt Library coming soon</div>
+      <PromptLibrary />
     </DashboardShell>
   );
 }
