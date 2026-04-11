@@ -165,9 +165,20 @@
 
 @keyframes blink {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+  50% { opacity: 0; }
 }
-.animate-blink { animation: blink 1.5s infinite; }
+.animate-blink { animation: blink 1.5s ease-in-out infinite; }
+
+/* ------------------------------------------------------------------ */
+/*  Cyber utilities                                                      */
+/* ------------------------------------------------------------------ */
+.text-glow-primary {
+  text-shadow: 0 0 8px rgba(0,255,136,0.6), 0 0 16px rgba(0,255,136,0.3);
+}
+
+[data-theme="cyber"] .hexagon {
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
 
 /* ------------------------------------------------------------------ */
 /*  Tailwind theme bridge                                               */
