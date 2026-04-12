@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
 import type { Prompt } from '@/types';
-import PromptCard, { TOOL_CONFIG } from './PromptCard';
+import PromptCard, { TOOL_CONFIG, CYBER_TOOL_CONFIG } from './PromptCard';
 import NewPromptPanel from './NewPromptPanel';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 /* ------------------------------------------------------------------ */
 /*  Sample data                                                         */
@@ -85,17 +86,22 @@ const SAMPLE_PROMPTS: Prompt[] = [
 ];
 
 const TOOLS = Object.keys(TOOL_CONFIG) as (keyof typeof TOOL_CONFIG)[];
+const MONO = "'JetBrains Mono', monospace";
 
 /* ------------------------------------------------------------------ */
 /*  PromptLibrary                                                       */
 /* ------------------------------------------------------------------ */
 export default function PromptLibrary() {
+  const { theme } = useTheme();
+  const isCyber = theme === 'cyber';
+
   const [prompts, setPrompts] = useState<Prompt[]>(SAMPLE_PROMPTS);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTool, setActiveTool] = useState('ALL');
   const [minQuality, setMinQuality] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
 
   /* Filtering */
   const filtered = prompts
@@ -132,7 +138,314 @@ export default function PromptLibrary() {
   }
 
   const toolColor = activeTool !== 'ALL' ? TOOL_CONFIG[activeTool]?.color : '#0F172A';
+  void toolColor; // referenced for completeness
 
+  /* ================================================================ */
+  /*  CYBER RENDER                                                     */
+  /* ================================================================ */
+  if (isCyber) {
+    return (
+      <div style={{ position: 'relative' }}>
+        {/* ── FILTER BAR — cyber ── */}
+        <div
+          style={{
+            position: 'sticky',
+            top: 0,
+            background: '#0A0A0F',
+            borderBottom: '1px solid #1A1A2A',
+            zIndex: 10,
+            padding: '12px 24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
+            marginLeft: -24,
+            marginRight: -24,
+            marginTop: -24,
+          }}
+        >
+          {/* Row 1: Search — cyber */}
+          <div style={{ position: 'relative' }}>
+            {/* ">" prefix */}
+            <span
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: '#00FF88',
+                fontFamily: MONO,
+                fontSize: 13,
+                fontWeight: 700,
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            >
+              {'>'}
+            </span>
+            <input
+              className="cyber-prompt-search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="search_prompts..."
+              style={{
+                width: '100%',
+                height: 36,
+                background: '#0A0A0F',
+                border: 'none',
+                borderBottom: `2px solid ${searchFocused ? '#00FF88' : '#2A2A3E'}`,
+                paddingLeft: 32,
+                paddingRight: 48,
+                fontFamily: MONO,
+                fontSize: 13,
+                color: '#F8F8F2',
+                outline: 'none',
+                borderRadius: 0,
+                boxSizing: 'border-box',
+                transition: 'border-bottom-color 150ms ease',
+              }}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setSearchFocused(false)}
+            />
+            {/* ⌘F hint */}
+            <span
+              style={{
+                position: 'absolute',
+                right: 10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: '#0E0E13',
+                border: '1px solid #2A2A3E',
+                color: '#4B5563',
+                fontFamily: MONO,
+                fontSize: 10,
+                padding: '1px 6px',
+                pointerEvents: 'none',
+              }}
+            >
+              ⌘F
+            </span>
+          </div>
+
+          {/* Row 2: Tool filters + quality — cyber */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+            {/* ALL button */}
+            <button
+              onClick={() => setActiveTool('ALL')}
+              style={{
+                height: 28,
+                paddingLeft: 8,
+                paddingRight: 8,
+                fontSize: 11,
+                fontFamily: MONO,
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                borderRadius: 4,
+                transition: 'all 100ms ease',
+                border: activeTool === 'ALL' ? '1px solid #00FF88' : '1px solid #2A2A3E',
+                background: activeTool === 'ALL' ? 'rgba(0,255,136,0.1)' : '#0E0E13',
+                color: activeTool === 'ALL' ? '#00FF88' : '#4B5563',
+                boxShadow: activeTool === 'ALL' ? '0 0 8px rgba(0,255,136,0.3)' : 'none',
+              }}
+            >
+              ALL
+            </button>
+
+            {/* Tool buttons — cyber */}
+            {TOOLS.map((t) => {
+              const cfg = CYBER_TOOL_CONFIG[t] ?? CYBER_TOOL_CONFIG.Other;
+              const isActive = activeTool === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setActiveTool(isActive ? 'ALL' : t)}
+                  style={{
+                    height: 28,
+                    paddingLeft: 8,
+                    paddingRight: 8,
+                    fontSize: 11,
+                    fontFamily: MONO,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    borderRadius: 4,
+                    transition: 'all 100ms ease',
+                    border: isActive ? `1px solid ${cfg.border}` : '1px solid #2A2A3E',
+                    background: isActive ? cfg.bg : '#0E0E13',
+                    color: isActive ? cfg.color : '#4B5563',
+                    boxShadow: isActive ? `0 0 8px ${cfg.border}` : 'none',
+                  }}
+                >
+                  {t}
+                </button>
+              );
+            })}
+
+            {/* Separator */}
+            <span style={{ color: '#2A2A3E', fontSize: 14, userSelect: 'none', fontFamily: MONO }}>│</span>
+
+            {/* Quality chips — cyber */}
+            {([3, 4, 5] as const).map((q) => {
+              const isActive = minQuality === q;
+              return (
+                <button
+                  key={q}
+                  onClick={() => setMinQuality(isActive ? 0 : q)}
+                  style={{
+                    height: 28,
+                    paddingLeft: 8,
+                    paddingRight: 8,
+                    fontSize: 11,
+                    fontFamily: MONO,
+                    cursor: 'pointer',
+                    borderRadius: 4,
+                    transition: 'all 100ms ease',
+                    border: isActive ? '1px solid #FFB800' : '1px solid #2A2A3E',
+                    background: isActive ? 'rgba(255,184,0,0.1)' : '#0E0E13',
+                    color: isActive ? '#FFB800' : '#4B5563',
+                    boxShadow: isActive ? '0 0 8px rgba(255,184,0,0.3)' : 'none',
+                  }}
+                >
+                  ★ {q}+
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ── GRID ── */}
+        <div className="prompt-grid" style={{ padding: '24px 24px 24px' }}>
+          {filtered.map((p) => (
+            <PromptCard
+              key={p.id}
+              prompt={p}
+              onCopy={handleCopy}
+              onUseInSession={handleUseInSession}
+            />
+          ))}
+        </div>
+
+        {/* ── EMPTY STATE — cyber ── */}
+        {filtered.length === 0 && (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingTop: 96,
+              paddingBottom: 96,
+            }}
+          >
+            <div
+              style={{
+                fontFamily: MONO,
+                fontSize: 16,
+                color: '#2A2A3E',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }}
+            >
+              {'// NO_PROMPTS_FOUND'}
+            </div>
+            <div
+              style={{
+                fontFamily: MONO,
+                fontSize: 13,
+                color: '#1A1A2A',
+                marginTop: 8,
+              }}
+            >
+              {'> try different keywords or clear filters'}
+            </div>
+            <button
+              onClick={clearFilters}
+              style={{
+                marginTop: 20,
+                height: 32,
+                paddingLeft: 16,
+                paddingRight: 16,
+                background: 'transparent',
+                border: '1px solid #00FF88',
+                color: '#00FF88',
+                fontFamily: MONO,
+                fontSize: 12,
+                cursor: 'pointer',
+                borderRadius: 0,
+                transition: 'background 150ms ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,255,136,0.1)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+            >
+              clear_filters
+            </button>
+          </div>
+        )}
+
+        {/* ── NEW PROMPT FAB — cyber ── */}
+        <button
+          onClick={() => setPanelOpen(true)}
+          style={{
+            position: 'fixed',
+            top: 80,
+            right: 24,
+            zIndex: 20,
+            height: 32,
+            paddingLeft: 16,
+            paddingRight: 16,
+            background: '#00FF88',
+            color: '#000000',
+            border: 'none',
+            fontFamily: MONO,
+            fontSize: 12,
+            fontWeight: 900,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            cursor: 'pointer',
+            borderRadius: 0,
+            boxShadow: '0 0 20px rgba(0,255,136,0.3)',
+            transition: 'box-shadow 150ms ease, transform 150ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 30px rgba(0,255,136,0.5)';
+            e.currentTarget.style.transform = 'scale(1.02)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 0 20px rgba(0,255,136,0.3)';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
+        >
+          + NEW_PROMPT
+        </button>
+
+        {/* ── NEW PROMPT PANEL ── */}
+        <NewPromptPanel
+          open={panelOpen}
+          onClose={() => setPanelOpen(false)}
+          onSave={handleSave}
+        />
+
+        {/* ── CSS ── */}
+        <style>{`
+          .prompt-grid {
+            column-count: 3;
+            column-gap: 12px;
+          }
+          @media (max-width: 1023px) {
+            .prompt-grid { column-count: 2; }
+          }
+          @media (max-width: 639px) {
+            .prompt-grid { column-count: 1; }
+          }
+          .cyber-prompt-search::placeholder {
+            color: #2A2A3E;
+            font-family: 'JetBrains Mono', monospace;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  /* ================================================================ */
+  /*  DEFAULT RENDER                                                   */
+  /* ================================================================ */
   return (
     <div style={{ position: 'relative' }}>
       {/* ── FILTER BAR ── */}
