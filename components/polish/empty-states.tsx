@@ -1,5 +1,9 @@
 'use client';
 
+import { useTheme } from '@/components/providers/ThemeProvider';
+
+const MONO = "'JetBrains Mono', monospace";
+
 /* ------------------------------------------------------------------ */
 /*  Base layout                                                          */
 /* ------------------------------------------------------------------ */
@@ -16,6 +20,91 @@ function EmptyBase({
   ctaLabel: string;
   onCta: () => void;
 }) {
+  const { theme } = useTheme();
+  const isCyber = theme === 'cyber';
+
+  /* ================================================================ */
+  /*  CYBER RENDER                                                     */
+  /* ================================================================ */
+  if (isCyber) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingTop: 96,
+          paddingBottom: 96,
+          paddingLeft: 32,
+          paddingRight: 32,
+          textAlign: 'center',
+        }}
+      >
+        {icon}
+        <div
+          style={{
+            fontFamily: MONO,
+            fontSize: 13,
+            fontWeight: 700,
+            color: '#2A2A3E',
+            marginTop: 20,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+          }}
+        >
+          // {headline.toLowerCase().replace(/\s+/g, '_')}
+        </div>
+        <div
+          style={{
+            fontFamily: MONO,
+            fontSize: 12,
+            color: '#1A1A2A',
+            marginTop: 8,
+            maxWidth: 320,
+            lineHeight: 1.6,
+            fontStyle: 'italic',
+          }}
+        >
+          &gt; {subtext}
+        </div>
+        <button
+          onClick={onCta}
+          style={{
+            height: 32,
+            paddingLeft: 16,
+            paddingRight: 16,
+            background: 'transparent',
+            color: '#00FF88',
+            border: '1px solid #00FF88',
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: 'pointer',
+            borderRadius: 0,
+            marginTop: 24,
+            fontFamily: MONO,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            transition: 'background 150ms ease, box-shadow 150ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(0,255,136,0.08)';
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(0,255,136,0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          {ctaLabel}
+        </button>
+      </div>
+    );
+  }
+
+  /* ================================================================ */
+  /*  DEFAULT RENDER                                                   */
+  /* ================================================================ */
   return (
     <div
       style={{
@@ -84,10 +173,13 @@ function EmptyBase({
 /*  EmptyFeatureBoard                                                    */
 /* ------------------------------------------------------------------ */
 export function EmptyFeatureBoard({ onCta }: { onCta: () => void }) {
+  const { theme } = useTheme();
+  const strokeColor = theme === 'cyber' ? '#2A2A3E' : '#CBD5E1';
+
   return (
     <EmptyBase
       icon={
-        <svg width={64} height={64} viewBox="0 0 64 64" fill="none" stroke="#CBD5E1" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <svg width={64} height={64} viewBox="0 0 64 64" fill="none" stroke={strokeColor} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
           {/* 3-column kanban */}
           <rect x="4"  y="12" width="16" height="40" />
           <rect x="24" y="12" width="16" height="40" />
@@ -115,10 +207,13 @@ export function EmptyFeatureBoard({ onCta }: { onCta: () => void }) {
 /*  EmptyPromptLibrary                                                   */
 /* ------------------------------------------------------------------ */
 export function EmptyPromptLibrary({ onCta }: { onCta: () => void }) {
+  const { theme } = useTheme();
+  const strokeColor = theme === 'cyber' ? '#2A2A3E' : '#CBD5E1';
+
   return (
     <EmptyBase
       icon={
-        <svg width={64} height={64} viewBox="0 0 64 64" fill="none" stroke="#CBD5E1" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <svg width={64} height={64} viewBox="0 0 64 64" fill="none" stroke={strokeColor} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
           {/* Document outline */}
           <rect x="12" y="8" width="40" height="48" />
           {/* Three text lines */}
@@ -142,10 +237,13 @@ export function EmptyPromptLibrary({ onCta }: { onCta: () => void }) {
 /*  EmptyVibeSessions                                                    */
 /* ------------------------------------------------------------------ */
 export function EmptyVibeSessions({ onCta }: { onCta: () => void }) {
+  const { theme } = useTheme();
+  const strokeColor = theme === 'cyber' ? '#2A2A3E' : '#CBD5E1';
+
   return (
     <EmptyBase
       icon={
-        <svg width={64} height={64} viewBox="0 0 64 64" fill="none" stroke="#CBD5E1" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <svg width={64} height={64} viewBox="0 0 64 64" fill="none" stroke={strokeColor} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
           {/* Lightning bolt / zap */}
           <polyline points="38,8 22,34 32,34 26,56 44,28 34,28 38,8" />
         </svg>
@@ -162,10 +260,13 @@ export function EmptyVibeSessions({ onCta }: { onCta: () => void }) {
 /*  EmptySearchResults                                                   */
 /* ------------------------------------------------------------------ */
 export function EmptySearchResults({ query, onClear }: { query: string; onClear: () => void }) {
+  const { theme } = useTheme();
+  const strokeColor = theme === 'cyber' ? '#2A2A3E' : '#CBD5E1';
+
   return (
     <EmptyBase
       icon={
-        <svg width={64} height={64} viewBox="0 0 64 64" fill="none" stroke="#CBD5E1" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+        <svg width={64} height={64} viewBox="0 0 64 64" fill="none" stroke={strokeColor} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
           {/* Magnifying glass */}
           <circle cx="28" cy="28" r="16" />
           <line x1="40" y1="40" x2="56" y2="56" />
