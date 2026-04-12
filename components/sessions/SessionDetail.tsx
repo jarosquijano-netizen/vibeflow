@@ -5,6 +5,9 @@ import { ChevronDown, ChevronUp, Zap, CheckSquare } from 'lucide-react';
 import type { VibeSession, BacklogItem } from '@/types';
 import BacklogItemRow from './BacklogItemRow';
 import { vibeToast } from '@/components/polish/toasts';
+import { useTheme } from '@/components/providers/ThemeProvider';
+
+const MONO = "'JetBrains Mono', monospace";
 
 /* ------------------------------------------------------------------ */
 /*  Config                                                              */
@@ -139,6 +142,8 @@ function SessionDetailInner({
   onUpdate: (updated: VibeSession) => void;
 }) {
   const isClosed = session.status === 'CLOSED';
+  const { theme } = useTheme();
+  const isCyber = theme === 'cyber';
 
   /* ── Local state ── */
   const [localTitle, setLocalTitle] = useState(session.title);
@@ -868,169 +873,347 @@ function SessionDetailInner({
 
         {/* ── BACKLOG ITEMS ── */}
         <div>
-          <span style={sectionLabel}>Backlog Items</span>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ height: 28, borderBottom: '1px solid #E2E8F0' }}>
-                {['TASK', 'STATUS', 'JIRA'].map((h) => (
-                  <th
-                    key={h}
-                    style={{
-                      fontSize: 10,
-                      textTransform: 'uppercase',
-                      color: '#94A3B8',
-                      fontWeight: 700,
-                      textAlign: 'left',
-                      fontFamily: 'var(--font-dm-sans)',
-                      letterSpacing: '0.06em',
-                      paddingBottom: 4,
-                    }}
-                  >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {backlogItems.map((item) => (
-                <BacklogItemRow
-                  key={item.id}
-                  item={item}
-                  readOnly={isClosed}
-                  onChange={(updated) => {
-                    const next = backlogItems.map((b) => b.id === updated.id ? updated : b);
-                    setBacklogItems(next);
-                    save({ backlogItems: next });
-                  }}
-                />
-              ))}
+          {isCyber ? (
+            <>
+              {/* Cyber section header */}
+              <span
+                style={{
+                  display: 'block',
+                  fontFamily: MONO,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.15em',
+                  color: '#6B7280',
+                  marginBottom: 12,
+                }}
+              >
+                // BACKLOG_ITEMS
+              </span>
 
-              {/* Add row — hide when closed */}
-              {!isClosed && (
-                addingItem ? (
-                  <tr style={{ height: 32 }}>
-                    <td colSpan={3}>
+              {/* Cyber table wrapper */}
+              <div
+                style={{
+                  background: '#0E0E16',
+                  border: '1px solid #3B4B3D',
+                  borderRadius: 6,
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Cyber header row */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '8px 16px',
+                    background: '#16161E',
+                    borderBottom: '1px solid #3B4B3D',
+                  }}
+                >
+                  <span style={{ flex: 1, fontFamily: MONO, fontSize: 10, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.15em' }}>TASK</span>
+                  <span style={{ width: 112, fontFamily: MONO, fontSize: 10, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.15em', flexShrink: 0 }}>STATUS</span>
+                  <span style={{ width: 96, fontFamily: MONO, fontSize: 10, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.15em', flexShrink: 0 }}>JIRA</span>
+                  <span style={{ width: 32, flexShrink: 0 }} />
+                </div>
+
+                {/* Cyber rows */}
+                {backlogItems.map((item) => (
+                  <BacklogItemRow
+                    key={item.id}
+                    item={item}
+                    readOnly={isClosed}
+                    isCyber
+                    onChange={(updated) => {
+                      const next = backlogItems.map((b) => b.id === updated.id ? updated : b);
+                      setBacklogItems(next);
+                      save({ backlogItems: next });
+                    }}
+                  />
+                ))}
+
+                {/* Cyber add row */}
+                {!isClosed && (
+                  addingItem ? (
+                    <div style={{ padding: '12px 16px', borderTop: '1px dashed #2A2A3E' }}>
                       <input
                         autoFocus
                         value={newItemTitle}
                         onChange={(e) => setNewItemTitle(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') commitNewItem();
-                          if (e.key === 'Escape') {
-                            setAddingItem(false);
-                            setNewItemTitle('');
-                          }
+                          if (e.key === 'Escape') { setAddingItem(false); setNewItemTitle(''); }
                         }}
                         onBlur={commitNewItem}
-                        placeholder="New backlog item title..."
+                        placeholder="// task description..."
                         style={{
                           width: '100%',
-                          height: 28,
-                          border: '1px solid #E2E8F0',
-                          background: '#F1F5F9',
-                          paddingLeft: 8,
-                          fontSize: 13,
+                          background: 'transparent',
+                          border: 'none',
+                          borderBottom: '1px solid #00FF88',
                           outline: 'none',
-                          borderRadius: 0,
-                          fontFamily: 'var(--font-dm-sans)',
-                          color: '#0F172A',
+                          fontFamily: MONO,
+                          fontSize: 13,
+                          color: '#F0FFF4',
+                          padding: '2px 0',
                         }}
                       />
-                    </td>
-                  </tr>
-                ) : (
-                  <tr style={{ height: 32, borderTop: '1px dashed #E2E8F0' }}>
-                    <td colSpan={3}>
-                      <button
-                        onClick={() => setAddingItem(true)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          fontSize: 12,
-                          color: '#2563EB',
-                          cursor: 'pointer',
-                          padding: 0,
-                          fontFamily: 'var(--font-dm-sans)',
-                        }}
+                    </div>
+                  ) : (
+                    <div
+                      style={{ padding: '12px 16px', borderTop: '1px dashed #2A2A3E', cursor: 'pointer' }}
+                      onClick={() => setAddingItem(true)}
+                    >
+                      <span
+                        style={{ fontFamily: MONO, fontSize: 12, color: '#00FF88' }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLSpanElement).style.opacity = '0.7'; }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLSpanElement).style.opacity = '1'; }}
                       >
                         + Create backlog item
-                      </button>
-                    </td>
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Default section header */}
+              <span style={sectionLabel}>Backlog Items</span>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ height: 28, borderBottom: '1px solid #E2E8F0' }}>
+                    {['TASK', 'STATUS', 'JIRA'].map((h) => (
+                      <th
+                        key={h}
+                        style={{
+                          fontSize: 10,
+                          textTransform: 'uppercase',
+                          color: '#94A3B8',
+                          fontWeight: 700,
+                          textAlign: 'left',
+                          fontFamily: 'var(--font-dm-sans)',
+                          letterSpacing: '0.06em',
+                          paddingBottom: 4,
+                        }}
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                )
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {backlogItems.map((item) => (
+                    <BacklogItemRow
+                      key={item.id}
+                      item={item}
+                      readOnly={isClosed}
+                      onChange={(updated) => {
+                        const next = backlogItems.map((b) => b.id === updated.id ? updated : b);
+                        setBacklogItems(next);
+                        save({ backlogItems: next });
+                      }}
+                    />
+                  ))}
+
+                  {/* Add row — hide when closed */}
+                  {!isClosed && (
+                    addingItem ? (
+                      <tr style={{ height: 32 }}>
+                        <td colSpan={3}>
+                          <input
+                            autoFocus
+                            value={newItemTitle}
+                            onChange={(e) => setNewItemTitle(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') commitNewItem();
+                              if (e.key === 'Escape') { setAddingItem(false); setNewItemTitle(''); }
+                            }}
+                            onBlur={commitNewItem}
+                            placeholder="New backlog item title..."
+                            style={{
+                              width: '100%',
+                              height: 28,
+                              border: '1px solid #E2E8F0',
+                              background: '#F1F5F9',
+                              paddingLeft: 8,
+                              fontSize: 13,
+                              outline: 'none',
+                              borderRadius: 0,
+                              fontFamily: 'var(--font-dm-sans)',
+                              color: '#0F172A',
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr style={{ height: 32, borderTop: '1px dashed #E2E8F0' }}>
+                        <td colSpan={3}>
+                          <button
+                            onClick={() => setAddingItem(true)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              fontSize: 12,
+                              color: '#2563EB',
+                              cursor: 'pointer',
+                              padding: 0,
+                              fontFamily: 'var(--font-dm-sans)',
+                            }}
+                          >
+                            + Create backlog item
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
 
         {/* ── JIRA SYNC ── */}
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>
-              {jiraSyncedIds.length > 0
-                ? `${jiraSyncedIds.length} item${jiraSyncedIds.length !== 1 ? 's' : ''} synced to Jira`
-                : 'Not synced yet'}
-            </span>
-
-            {/* Sync button — hide when closed */}
-            {!isClosed && (
-              <button
-                onClick={handleJiraSync}
-                style={{
-                  height: 32,
-                  paddingLeft: 12,
-                  paddingRight: 12,
-                  background: '#FFFFFF',
-                  border: '1px solid #E2E8F0',
-                  color: '#0F172A',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  borderRadius: 0,
-                  fontFamily: 'var(--font-dm-sans)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
-              >
-                <div
-                  style={{
-                    width: 14,
-                    height: 14,
-                    background: '#2563EB',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <span style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>J</span>
-                </div>
-                Sync to Jira
-              </button>
-            )}
-          </div>
-
-          {/* Synced ID chips */}
-          {jiraSyncedIds.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
-              {jiraSyncedIds.map((id) => (
-                <span
-                  key={id}
-                  style={{
-                    background: '#EFF6FF',
-                    color: '#2563EB',
-                    fontSize: 10,
-                    padding: '2px 6px',
-                    border: '1px solid #BFDBFE',
-                    fontFamily: 'var(--font-dm-sans)',
-                  }}
-                >
-                  {id}
+          {isCyber ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: MONO, fontSize: 12, color: '#6B7280' }}>
+                  {jiraSyncedIds.length > 0
+                    ? `${jiraSyncedIds.length} item${jiraSyncedIds.length !== 1 ? 's' : ''} synced to Jira`
+                    : 'Not synced yet'}
                 </span>
-              ))}
-            </div>
+                {!isClosed && (
+                  <button
+                    onClick={handleJiraSync}
+                    style={{
+                      background: 'transparent',
+                      border: '1px solid #3B4B3D',
+                      color: '#6B7280',
+                      fontFamily: MONO,
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      borderRadius: 4,
+                      padding: '6px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      transition: 'all 150ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#00D4FF';
+                      e.currentTarget.style.color = '#00D4FF';
+                      e.currentTarget.style.background = 'rgba(0,212,255,0.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#3B4B3D';
+                      e.currentTarget.style.color = '#6B7280';
+                      e.currentTarget.style.background = 'transparent';
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        background: '#00D4FF',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span style={{ color: '#000000', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>J</span>
+                    </div>
+                    Sync to Jira
+                  </button>
+                )}
+              </div>
+              {jiraSyncedIds.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                  {jiraSyncedIds.map((id) => (
+                    <span
+                      key={id}
+                      style={{
+                        background: 'rgba(0,212,255,0.08)',
+                        border: '1px solid rgba(0,212,255,0.3)',
+                        color: '#00D4FF',
+                        fontFamily: MONO,
+                        fontSize: 10,
+                        padding: '2px 8px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      {id}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>
+                  {jiraSyncedIds.length > 0
+                    ? `${jiraSyncedIds.length} item${jiraSyncedIds.length !== 1 ? 's' : ''} synced to Jira`
+                    : 'Not synced yet'}
+                </span>
+                {!isClosed && (
+                  <button
+                    onClick={handleJiraSync}
+                    style={{
+                      height: 32,
+                      paddingLeft: 12,
+                      paddingRight: 12,
+                      background: '#FFFFFF',
+                      border: '1px solid #E2E8F0',
+                      color: '#0F172A',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      borderRadius: 0,
+                      fontFamily: 'var(--font-dm-sans)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#F8FAFC'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#FFFFFF'; }}
+                  >
+                    <div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        background: '#2563EB',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <span style={{ color: '#FFFFFF', fontSize: 10, fontWeight: 700, lineHeight: 1 }}>J</span>
+                    </div>
+                    Sync to Jira
+                  </button>
+                )}
+              </div>
+              {jiraSyncedIds.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                  {jiraSyncedIds.map((id) => (
+                    <span
+                      key={id}
+                      style={{
+                        background: '#EFF6FF',
+                        color: '#2563EB',
+                        fontSize: 10,
+                        padding: '2px 6px',
+                        border: '1px solid #BFDBFE',
+                        fontFamily: 'var(--font-dm-sans)',
+                      }}
+                    >
+                      {id}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
 
