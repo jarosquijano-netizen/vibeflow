@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import type { GanttFeature } from './GanttRow';
-import { ownerColor, ownerInitials } from './GanttRow';
+import { ownerColor, ownerInitials, CYBER_STATUS_CONFIG } from './GanttRow';
 import GanttChart from './GanttChart';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 /* ------------------------------------------------------------------ */
 /*  Data                                                                */
@@ -42,6 +43,10 @@ const SIZE_COLORS: Record<string, string> = {
   XS: '#64748B', S: '#16A34A', M: '#2563EB', L: '#D97706', XL: '#DC2626',
 };
 
+const CYBER_SIZE: Record<string, string> = {
+  XS: '#64748B', S: '#00FF88', M: '#00D4FF', L: '#FFB800', XL: '#FF4444',
+};
+
 const UPDATED: Record<string, string> = {
   DONE: '14d ago', BUILDING: '2d ago', PROTOTYPING: '4d ago',
   SCOPING: '1d ago', IDEA: '7d ago', PARKED: '30d ago',
@@ -50,6 +55,8 @@ const UPDATED: Record<string, string> = {
 const OWNERS = ['Jordan Davies', 'Sara Kim', 'Marcus Bell'];
 const ALL_QUARTERS = ['Q1', 'Q2', 'Q3', 'Q4'];
 type SortField = 'title' | 'status' | 'size' | 'quarter' | 'progress';
+const MONO = "'JetBrains Mono', monospace";
+const DISPLAY = "'Space Grotesk', sans-serif";
 
 /* ------------------------------------------------------------------ */
 /*  RoadmapPage                                                         */
@@ -57,6 +64,9 @@ type SortField = 'title' | 'status' | 'size' | 'quarter' | 'progress';
 export default function RoadmapPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const { theme } = useTheme();
+  const isCyber = theme === 'cyber';
+
   const [activeQuarters, setActiveQuarters] = useState<string[]>(ALL_QUARTERS);
   const [buildingOnly, setBuildingOnly] = useState(false);
   const [sortField, setSortField] = useState<SortField>('quarter');
@@ -66,7 +76,7 @@ export default function RoadmapPage() {
   const filtered = GANTT_FEATURES
     .filter((f) => buildingOnly ? f.status === 'BUILDING' : true)
     .filter((f) => {
-      const q = f.quarter.split(' ')[0]; // "Q1", "Q2", etc.
+      const q = f.quarter.split(' ')[0];
       return activeQuarters.includes(q);
     });
 
@@ -95,11 +105,306 @@ export default function RoadmapPage() {
     );
   }
 
+  const TABS = [
+    { label: 'Roadmap', path: '/dashboard/roadmap' },
+    { label: 'Reports', path: '/dashboard/reports' },
+  ];
+
+  /* ================================================================ */
+  /*  CYBER RENDER                                                     */
+  /* ================================================================ */
+  if (isCyber) {
+    return (
+      <div>
+        {/* ── TAB SWITCHER — cyber ── */}
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #2A2A3E', marginBottom: 16 }}>
+          {TABS.map(({ label, path }) => {
+            const isActive = pathname === path;
+            return (
+              <button
+                key={path}
+                onClick={() => router.push(path)}
+                style={{
+                  paddingBottom: 8,
+                  fontFamily: MONO,
+                  fontSize: 14,
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? '#F8F8F2' : '#4B5563',
+                  background: 'none',
+                  border: 'none',
+                  borderBottom: isActive ? '2px solid #00FF88' : '2px solid transparent',
+                  cursor: 'pointer',
+                  transition: 'color 100ms ease',
+                }}
+                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = '#9CA3AF'; }}
+                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#4B5563'; }}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── TOOLBAR — cyber ── */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingBottom: 16,
+            marginBottom: 16,
+            borderBottom: '1px solid #2A2A3E',
+            flexWrap: 'wrap',
+            gap: 8,
+          }}
+        >
+          <h1 style={{ fontFamily: DISPLAY, fontSize: 20, fontWeight: 700, color: '#F8F8F2', margin: 0 }}>
+            ROADMAP<span className="animate-blink" style={{ color: '#00FF88', marginLeft: 2 }}>|</span>
+          </h1>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {/* Quarter chips — cyber */}
+            {ALL_QUARTERS.map((q) => {
+              const isActive = activeQuarters.includes(q);
+              return (
+                <button
+                  key={q}
+                  onClick={() => toggleQuarter(q)}
+                  style={{
+                    height: 28,
+                    paddingLeft: 8,
+                    paddingRight: 8,
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    cursor: 'pointer',
+                    borderRadius: 4,
+                    border: isActive ? '1px solid #00D4FF' : '1px solid #2A2A3E',
+                    background: isActive ? 'rgba(0,212,255,0.1)' : '#0E0E13',
+                    color: isActive ? '#00D4FF' : '#4B5563',
+                    fontFamily: MONO,
+                    transition: 'all 100ms ease',
+                  }}
+                >
+                  {q}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setActiveQuarters(ALL_QUARTERS)}
+              style={{
+                height: 28,
+                paddingLeft: 8,
+                paddingRight: 8,
+                fontSize: 11,
+                textTransform: 'uppercase',
+                cursor: 'pointer',
+                borderRadius: 4,
+                border: activeQuarters.length === 4 ? '1px solid #00D4FF' : '1px solid #2A2A3E',
+                background: activeQuarters.length === 4 ? 'rgba(0,212,255,0.1)' : '#0E0E13',
+                color: activeQuarters.length === 4 ? '#00D4FF' : '#4B5563',
+                fontFamily: MONO,
+                transition: 'all 100ms ease',
+              }}
+            >
+              Full Year
+            </button>
+
+            {/* Owner avatars */}
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              {OWNERS.map((owner, i) => (
+                <div
+                  key={owner}
+                  title={owner}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    background: ownerColor(owner),
+                    color: '#FFFFFF',
+                    fontSize: 9,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid #0A0A0F',
+                    marginLeft: i === 0 ? 0 : -6,
+                    cursor: 'pointer',
+                    position: 'relative',
+                    zIndex: OWNERS.length - i,
+                  }}
+                >
+                  {ownerInitials(owner)}
+                </div>
+              ))}
+            </div>
+
+            {/* Building only toggle — cyber */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontFamily: MONO, fontSize: 12, color: '#4B5563' }}>
+                Building only
+              </span>
+              <div
+                onClick={() => setBuildingOnly((v) => !v)}
+                style={{
+                  width: 32,
+                  height: 18,
+                  borderRadius: 9,
+                  background: buildingOnly ? 'rgba(0,255,136,0.3)' : '#2A2A3E',
+                  position: 'relative',
+                  cursor: 'pointer',
+                  transition: 'background 150ms ease',
+                  flexShrink: 0,
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 2,
+                    left: buildingOnly ? 16 : 2,
+                    width: 14,
+                    height: 14,
+                    borderRadius: '50%',
+                    background: '#00FF88',
+                    boxShadow: buildingOnly ? '0 0 8px rgba(0,255,136,0.5)' : 'none',
+                    transition: 'left 150ms ease, box-shadow 150ms ease',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ── GANTT CHART ── */}
+        <GanttChart features={filtered} />
+
+        {/* ── SWIMLANE TABLE — cyber ── */}
+        <div style={{ marginTop: 24 }}>
+          <div
+            style={{
+              fontFamily: MONO,
+              fontSize: 10,
+              textTransform: 'uppercase',
+              color: '#2A2A3E',
+              letterSpacing: '0.08em',
+              fontWeight: 700,
+              marginBottom: 8,
+            }}
+          >
+            {'// ALL_FEATURES'}
+          </div>
+
+          <div style={{ border: '1px solid #1A1A2A', background: '#0A0A0F' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ height: 32, borderBottom: '1px solid #1A1A2A' }}>
+                  {([
+                    { label: 'Feature',  field: 'title'    as SortField },
+                    { label: 'Owner',    field: null },
+                    { label: 'Size',     field: 'size'     as SortField },
+                    { label: 'Quarter',  field: 'quarter'  as SortField },
+                    { label: 'Progress', field: 'progress' as SortField },
+                    { label: 'Jira',     field: null },
+                    { label: 'Updated',  field: null },
+                  ]).map(({ label, field }) => (
+                    <th
+                      key={label}
+                      onClick={field ? () => toggleSort(field) : undefined}
+                      style={{
+                        fontFamily: MONO,
+                        fontSize: 11,
+                        textTransform: 'uppercase',
+                        color: '#2A2A3E',
+                        fontWeight: 700,
+                        textAlign: 'left',
+                        paddingLeft: 12,
+                        paddingRight: 12,
+                        letterSpacing: '0.06em',
+                        cursor: field ? 'pointer' : 'default',
+                        userSelect: 'none',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {label}
+                      {field && (
+                        <span style={{ marginLeft: 4, fontSize: 12, color: sortField === field ? '#00FF88' : '#2A2A3E' }}>
+                          {sortField === field ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
+                        </span>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((f, i) => {
+                  const cyberStatus = CYBER_STATUS_CONFIG[f.status] ?? CYBER_STATUS_CONFIG.IDEA;
+                  const cyberSize = CYBER_SIZE[f.size] ?? '#64748B';
+                  return (
+                    <tr
+                      key={f.id}
+                      style={{
+                        height: 34,
+                        borderBottom: '1px solid #1A1A2A',
+                        background: i % 2 === 1 ? '#0D0D17' : '#0A0A0F',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,255,136,0.03)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 1 ? '#0D0D17' : '#0A0A0F'; }}
+                    >
+                      <td style={{ paddingLeft: 12, paddingRight: 12, maxWidth: 200 }}>
+                        <span style={{ fontFamily: MONO, fontSize: 12, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                          {f.title}
+                        </span>
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 12, whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: 16, height: 16, borderRadius: '50%', background: ownerColor(f.owner), color: '#FFFFFF', fontSize: 7, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {ownerInitials(f.owner)}
+                          </div>
+                          <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280' }}>{f.owner}</span>
+                        </div>
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 12 }}>
+                        <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: cyberSize, border: `1px solid ${cyberSize}4D`, background: `${cyberSize}1A`, padding: '1px 6px' }}>
+                          {f.size}
+                        </span>
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 12, fontFamily: MONO, fontSize: 11, color: '#4B5563', whiteSpace: 'nowrap' }}>
+                        {f.quarter}
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: 80, height: 4, background: '#1A1A2A', position: 'relative', flexShrink: 0 }}>
+                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${f.progress * 100}%`, background: '#00FF88' }} />
+                          </div>
+                          <span style={{ fontFamily: MONO, fontSize: 10, color: '#4B5563', whiteSpace: 'nowrap' }}>
+                            {Math.round(f.progress * 100)}%
+                          </span>
+                        </div>
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 12, fontFamily: MONO, fontSize: 11, color: '#4B5563' }}>
+                        {f.jiraEpicId ?? '—'}
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 12, fontFamily: MONO, fontSize: 11, color: cyberStatus.color, whiteSpace: 'nowrap' }}>
+                        {UPDATED[f.status] ?? '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ================================================================ */
+  /*  DEFAULT RENDER                                                   */
+  /* ================================================================ */
   return (
     <div>
       {/* ── TAB SWITCHER ── */}
       <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #E2E8F0', marginBottom: 16 }}>
-        {[{ label: 'Roadmap', path: '/dashboard/roadmap' }, { label: 'Reports', path: '/dashboard/reports' }].map(({ label, path }) => {
+        {TABS.map(({ label, path }) => {
           const isActive = pathname === path;
           return (
             <button
@@ -276,13 +581,13 @@ export default function RoadmapPage() {
             <thead>
               <tr style={{ height: 32, borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
                 {([
-                  { label: 'Feature', field: 'title' as SortField },
-                  { label: 'Owner', field: null },
-                  { label: 'Size', field: 'size' as SortField },
-                  { label: 'Quarter', field: 'quarter' as SortField },
+                  { label: 'Feature',  field: 'title'    as SortField },
+                  { label: 'Owner',    field: null },
+                  { label: 'Size',     field: 'size'     as SortField },
+                  { label: 'Quarter',  field: 'quarter'  as SortField },
                   { label: 'Progress', field: 'progress' as SortField },
-                  { label: 'Jira', field: null },
-                  { label: 'Updated', field: null },
+                  { label: 'Jira',     field: null },
+                  { label: 'Updated',  field: null },
                 ]).map(({ label, field }) => (
                   <th
                     key={label}

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTheme } from '@/components/providers/ThemeProvider';
 import GanttRow, { type GanttFeature, LABEL_WIDTH, TIMELINE_WIDTH, ownerColor, ownerInitials } from './GanttRow';
 
 /* ------------------------------------------------------------------ */
@@ -18,6 +19,14 @@ const QUARTERS = [
   { label: 'Q3 2026', key: 'Q3 2026' },
   { label: 'Q4 2026', key: 'Q4 2026' },
 ];
+
+const MONO = "'JetBrains Mono', monospace";
+
+/* ------------------------------------------------------------------ */
+/*  Suppress unused import warning                                      */
+/* ------------------------------------------------------------------ */
+void ownerColor;
+void ownerInitials;
 
 /* ------------------------------------------------------------------ */
 /*  Today line position                                                 */
@@ -39,6 +48,9 @@ interface GanttChartProps {
 }
 
 export default function GanttChart({ features }: GanttChartProps) {
+  const { theme } = useTheme();
+  const isCyber = theme === 'cyber';
+
   const todayX = getTodayX();
   const totalWidth = LABEL_WIDTH + TIMELINE_WIDTH;
 
@@ -51,6 +63,196 @@ export default function GanttChart({ features }: GanttChartProps) {
 
   let rowIndex = 0;
 
+  /* ================================================================ */
+  /*  CYBER RENDER                                                     */
+  /* ================================================================ */
+  if (isCyber) {
+    return (
+      <div
+        className="gantt-scroll-container"
+        style={{
+          overflowX: 'auto',
+          position: 'relative',
+          border: '1px solid #2A2A3E',
+          background: '#0A0A0F',
+        }}
+      >
+        <div style={{ minWidth: totalWidth, position: 'relative' }}>
+
+          {/* ── TIME AXIS — cyber ── */}
+          <div
+            style={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 10,
+              display: 'flex',
+              height: HEADER_HEIGHT,
+              background: '#0D0D17',
+              borderBottom: '1px solid #2A2A3E',
+            }}
+          >
+            {/* Label zone */}
+            <div
+              style={{
+                width: LABEL_WIDTH,
+                flexShrink: 0,
+                background: '#0A0A0F',
+                borderRight: '1px solid #1A1A2A',
+                position: 'sticky',
+                left: 0,
+                zIndex: 11,
+              }}
+            />
+
+            {/* Month cells */}
+            <div style={{ display: 'flex', width: TIMELINE_WIDTH, flexShrink: 0 }}>
+              {MONTHS.map((month) => (
+                <div
+                  key={month}
+                  style={{
+                    width: MONTH_WIDTH,
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: MONO,
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    color: '#2A2A3E',
+                    letterSpacing: '0.05em',
+                    position: 'relative',
+                    borderRight: '1px solid #1A1A2A',
+                  }}
+                >
+                  {month}
+                  {/* Bi-weekly tick */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: MONTH_WIDTH / 2,
+                      top: 0,
+                      bottom: 0,
+                      width: 1,
+                      background: '#1A1A2A',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── TODAY LINE — cyber ── */}
+          {todayX >= 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                left: LABEL_WIDTH + todayX,
+                top: 0,
+                bottom: 0,
+                width: 0,
+                borderLeft: '1px dashed #FF4444',
+                boxShadow: '0 0 8px rgba(255,68,68,0.3)',
+                zIndex: 5,
+                pointerEvents: 'none',
+              }}
+            >
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 4,
+                  left: 4,
+                  fontFamily: MONO,
+                  fontSize: 10,
+                  color: '#FF4444',
+                  background: '#0A0A0F',
+                  padding: '0 4px',
+                  whiteSpace: 'nowrap',
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}
+              >
+                TODAY
+              </span>
+            </div>
+          )}
+
+          {/* ── QUARTER GROUPS — cyber ── */}
+          {groupedByQuarter.map(({ label, key, items }) => (
+            <div key={key}>
+              {/* Quarter header */}
+              <div
+                style={{
+                  display: 'flex',
+                  height: QUARTER_HEIGHT,
+                  borderBottom: '1px solid #1A1A2A',
+                  borderTop: '1px solid #1A1A2A',
+                }}
+              >
+                <div
+                  style={{
+                    width: LABEL_WIDTH,
+                    flexShrink: 0,
+                    background: '#0D0D17',
+                    display: 'flex',
+                    alignItems: 'center',
+                    paddingLeft: 16,
+                    paddingRight: 16,
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 3,
+                    borderRight: '1px solid #1A1A2A',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: MONO,
+                      fontSize: 12,
+                      textTransform: 'uppercase',
+                      color: '#2A2A3E',
+                      fontWeight: 700,
+                      letterSpacing: '0.06em',
+                    }}
+                  >
+                    {label}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    width: TIMELINE_WIDTH,
+                    flexShrink: 0,
+                    background: '#0D0D17',
+                  }}
+                />
+              </div>
+
+              {/* Feature rows */}
+              {items.map((feature) => {
+                const ri = rowIndex++;
+                return (
+                  <GanttRow
+                    key={feature.id}
+                    feature={feature}
+                    rowIndex={ri}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        <style>{`
+          @media (max-width: 768px) {
+            .gantt-scroll-container { display: none; }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  /* ================================================================ */
+  /*  DEFAULT RENDER                                                   */
+  /* ================================================================ */
   return (
     <div
       className="gantt-scroll-container"
@@ -90,7 +292,7 @@ export default function GanttChart({ features }: GanttChartProps) {
 
           {/* Month cells */}
           <div style={{ display: 'flex', width: TIMELINE_WIDTH, flexShrink: 0 }}>
-            {MONTHS.map((month, i) => (
+            {MONTHS.map((month) => (
               <div
                 key={month}
                 style={{
