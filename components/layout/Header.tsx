@@ -99,8 +99,8 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
       <header
         style={{
           height: 52,
-          background: '#0D0D17',
-          borderBottom: '1px solid rgba(59,75,61,0.3)',
+          background: '#12121E',
+          borderBottom: '1px solid #3B4B3D',
           paddingLeft: 24,
           paddingRight: 24,
           display: 'flex',
@@ -117,18 +117,18 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
               fontFamily: "'Space Grotesk', sans-serif",
               fontSize: 18,
               fontWeight: 700,
-              color: '#E4E1E9',
+              color: '#F0FFF4',
               lineHeight: 1.2,
             }}
           >
             {title}
           </div>
-          <span style={{ color: '#4B5563', fontSize: 14 }}>|</span>
+          <span style={{ color: '#6B7280', fontSize: 14 }}>|</span>
           <div
             style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: 10,
-              color: '#4B5563',
+              color: '#6B7280',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
             }}
@@ -143,9 +143,9 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
           style={{
             width: 320,
             height: 32,
-            background: '#1E1E2E',
+            background: '#222230',
             border: 'none',
-            borderBottom: '2px solid rgba(59,75,61,0.3)',
+            borderBottom: '2px solid #3B4B3D',
             display: 'flex',
             alignItems: 'center',
             paddingLeft: 28,
@@ -159,7 +159,7 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
             (e.currentTarget as HTMLButtonElement).style.borderBottomColor = '#00FF88';
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderBottomColor = 'rgba(59,75,61,0.3)';
+            (e.currentTarget as HTMLButtonElement).style.borderBottomColor = '#3B4B3D';
           }}
         >
           <span
@@ -180,7 +180,7 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
               flex: 1,
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: 13,
-              color: '#4B5563',
+              color: '#6B7280',
               textAlign: 'left',
             }}
           >
@@ -190,7 +190,7 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
             style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: 10,
-              color: '#4B5563',
+              color: '#6B7280',
               flexShrink: 0,
             }}
           >
@@ -206,9 +206,9 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
               height: 32,
               paddingLeft: 12,
               paddingRight: 12,
-              background: '#1E1E2E',
-              border: '1px solid rgba(59,75,61,0.5)',
-              color: '#9CA3AF',
+              background: '#222230',
+              border: '1px solid #3B4B3D',
+              color: '#B9CBB9',
               fontSize: 13,
               fontFamily: "'Space Grotesk', sans-serif",
               fontWeight: 500,
@@ -223,12 +223,12 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
               e.currentTarget.style.color = '#00FF88';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(59,75,61,0.5)';
-              e.currentTarget.style.color = '#9CA3AF';
+              e.currentTarget.style.borderColor = '#3B4B3D';
+              e.currentTarget.style.color = '#B9CBB9';
             }}
           >
             Q2 2026
-            <ChevronDown size={12} style={{ color: '#4B5563' }} />
+            <ChevronDown size={12} style={{ color: '#6B7280' }} />
           </button>
 
           {/* Bell */}
@@ -237,12 +237,12 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
               width: 32,
               height: 32,
               background: 'none',
-              border: '1px solid rgba(59,75,61,0.5)',
+              border: '1px solid #3B4B3D',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#4B5563',
+              color: '#6B7280',
               transition: 'all 120ms ease',
             }}
             onMouseEnter={(e) => {
@@ -250,8 +250,8 @@ export default function Header({ title, breadcrumb }: HeaderProps) {
               e.currentTarget.style.color = '#00FF88';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'rgba(59,75,61,0.5)';
-              e.currentTarget.style.color = '#4B5563';
+              e.currentTarget.style.borderColor = '#3B4B3D';
+              e.currentTarget.style.color = '#6B7280';
             }}
           >
             <Bell size={16} />

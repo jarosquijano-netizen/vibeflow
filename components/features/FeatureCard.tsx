@@ -76,8 +76,8 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
       <div
         onClick={!isDragging ? onClick : undefined}
         style={{
-          background: '#1A1A2A',
-          border: `1px solid ${isDragging ? '#00FF88' : '#2A2A3E'}`,
+          background: '#16161E',
+          border: `1px solid ${isDragging ? '#00FF88' : '#3B4B3D'}`,
           borderLeft: `3px solid ${isDragging ? '#00FF88' : cyberCfg.color}`,
           borderRadius: 6,
           padding: 12,
@@ -99,7 +99,7 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
         onMouseLeave={(e) => {
           if (isDragging) return;
           const el = e.currentTarget;
-          el.style.borderColor = '#2A2A3E';
+          el.style.borderColor = '#3B4B3D';
           el.style.borderLeftColor = cyberCfg.color;
           el.style.boxShadow = 'none';
           el.style.transform = 'none';
@@ -111,7 +111,7 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
             fontFamily: "'Space Grotesk', sans-serif",
             fontSize: 13,
             fontWeight: 600,
-            color: '#F8F8F2',
+            color: '#F0FFF4',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
@@ -127,7 +127,7 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
           style={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 11,
-            color: '#4B5563',
+            color: '#6B7280',
             fontStyle: 'italic',
             marginTop: 4,
             display: '-webkit-box',
@@ -137,7 +137,7 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
             lineHeight: 1.4,
           }}
         >
-          <span style={{ color: '#2A2A3E', fontStyle: 'normal' }}>{'// '}</span>
+          <span style={{ color: '#4B5563', fontStyle: 'normal' }}>{'// '}</span>
           {feature.problemStatement}
         </div>
 
@@ -177,8 +177,8 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
             <span
               style={{
                 background: '#0E0E13',
-                color: '#4B5563',
-                border: '1px solid #2A2A3E',
+                color: '#6B7280',
+                border: '1px solid #3B4B3D',
                 fontFamily: "'JetBrains Mono', monospace",
                 fontSize: 10,
                 padding: '1px 6px',
@@ -206,7 +206,7 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
 
         {/* Row 4 — Footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#4B5563' }}>
+          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#6B7280' }}>
             {feature.quarter}
           </span>
           <div
@@ -222,7 +222,7 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
-              border: '1px solid rgba(0,255,136,0.3)',
+              border: '1px solid rgba(0,255,136,0.5)',
             }}
             title={feature.owner}
           >

@@ -110,18 +110,18 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
         style={{
           width: 320,
           flexShrink: 0,
-          borderRight: '1px solid rgba(59,75,61,0.3)',
+          borderRight: '1px solid #3B4B3D',
           display: 'flex',
           flexDirection: 'column',
           height: '100%',
-          background: '#0D0D17',
+          background: '#12121E',
         }}
       >
         {/* ── Header ── */}
         <div
           style={{
             padding: '12px 16px',
-            borderBottom: '1px solid rgba(59,75,61,0.3)',
+            borderBottom: '1px solid #3B4B3D',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
@@ -133,7 +133,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
               fontFamily: "'Space Grotesk', sans-serif",
               fontSize: 14,
               fontWeight: 700,
-              color: '#E4E1E9',
+              color: '#F0FFF4',
             }}
           >
             VIBE_SESSIONS
@@ -235,7 +235,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                 style={{
                   position: 'sticky',
                   top: 0,
-                  background: '#0D0D17',
+                  background: '#12121E',
                   zIndex: 10,
                   padding: '6px 16px',
                   display: 'flex',
@@ -248,7 +248,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 9,
                     textTransform: 'uppercase',
-                    color: '#4B5563',
+                    color: '#6B7280',
                     fontWeight: 600,
                     letterSpacing: '0.1em',
                     whiteSpace: 'nowrap',
@@ -256,7 +256,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                 >
                   {month}
                 </span>
-                <div style={{ flex: 1, height: 1, background: 'rgba(59,75,61,0.2)' }} />
+                <div style={{ flex: 1, height: 1, background: '#2A2A3E' }} />
               </div>
 
               {/* Session items */}
@@ -275,7 +275,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                       background: isOpen
                         ? isSelected ? 'rgba(0,255,136,0.06)' : '#1F1F25'
                         : isSelected ? 'rgba(27,27,32,0.7)' : 'rgba(27,27,32,0.4)',
-                      borderLeft: `4px solid ${isOpen ? '#00FF88' : '#2A2A3E'}`,
+                      borderLeft: `4px solid ${isOpen ? '#00FF88' : '#3B4B3D'}`,
                       opacity: isOpen ? 1 : 0.7,
                       transition: 'opacity 120ms ease, background 120ms ease',
                     }}
@@ -291,7 +291,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                       style={{
                         fontFamily: "'JetBrains Mono', monospace",
                         fontSize: 10,
-                        color: isOpen ? '#00FF88' : '#4B5563',
+                        color: isOpen ? '#00FF88' : '#6B7280',
                         marginBottom: 4,
                         textTransform: 'uppercase',
                         letterSpacing: '0.06em',
@@ -306,7 +306,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                         fontFamily: "'Space Grotesk', sans-serif",
                         fontSize: 14,
                         fontWeight: 700,
-                        color: isOpen ? '#FFFFFF' : '#9CA3AF',
+                        color: isOpen ? '#F0FFF4' : '#9CA3AF',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -328,7 +328,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                         style={{
                           fontFamily: "'JetBrains Mono', monospace",
                           fontSize: 10,
-                          color: isOpen ? '#9CA3AF' : '#4B5563',
+                          color: isOpen ? '#9CA3AF' : '#6B7280',
                         }}
                       >
                         {formatShortDate(session.date)} · {session.duration}h
@@ -338,7 +338,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                           fontFamily: "'JetBrains Mono', monospace",
                           fontSize: 11,
                           fontWeight: 700,
-                          color: isOpen ? '#00FF88' : '#4B5563',
+                          color: isOpen ? '#00FF88' : '#6B7280',
                         }}
                       >
                         +{xpEst} XP

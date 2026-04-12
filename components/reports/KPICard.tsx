@@ -19,13 +19,13 @@ const DELTA_COLORS = {
 const CYBER_DELTA_COLORS = {
   positive: '#00FF88',
   negative: '#FF4444',
-  neutral:  '#4B5563',
+  neutral:  '#6B7280',
 };
 
 const CYBER_ACCENT = {
   positive: '#00FF88',
   negative: '#FF4444',
-  neutral:  '#2A2A3E',
+  neutral:  '#3B4B3D',
 };
 
 const MONO = "'JetBrains Mono', monospace";
@@ -43,9 +43,9 @@ export default function KPICard({ label, value, delta, deltaType }: KPICardProps
         style={{
           background: '#111118',
           borderTop: `3px solid ${CYBER_ACCENT[deltaType]}`,
-          borderRight: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#2A2A3E'}`,
-          borderBottom: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#2A2A3E'}`,
-          borderLeft: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#2A2A3E'}`,
+          borderRight: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#3B4B3D'}`,
+          borderBottom: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#3B4B3D'}`,
+          borderLeft: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#3B4B3D'}`,
           borderRadius: 6,
           padding: 16,
           display: 'flex',
@@ -61,7 +61,7 @@ export default function KPICard({ label, value, delta, deltaType }: KPICardProps
             fontSize: 11,
             textTransform: 'uppercase',
             letterSpacing: '0.08em',
-            color: '#2A2A3E',
+            color: '#6B7280',
           }}
         >
           {label}
@@ -71,7 +71,7 @@ export default function KPICard({ label, value, delta, deltaType }: KPICardProps
             fontFamily: MONO,
             fontSize: 32,
             fontWeight: 700,
-            color: '#F8F8F2',
+            color: '#F0FFF4',
             lineHeight: 1.1,
           }}
         >

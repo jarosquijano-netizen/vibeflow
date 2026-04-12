@@ -88,7 +88,7 @@ function CustomBarTooltip({ active, payload, label }: { active?: boolean; payloa
 function CyberBarTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; fill: string }[]; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#0D0D17', border: '1px solid #2A2A3E', padding: '6px 10px', fontFamily: MONO, fontSize: 12, borderRadius: 4 }}>
+    <div style={{ background: '#12121E', border: '1px solid #3B4B3D', padding: '6px 10px', fontFamily: MONO, fontSize: 12, borderRadius: 4 }}>
       <div style={{ color: '#9CA3AF', marginBottom: 4 }}>{label}</div>
       {payload.map((p) => (
         <div key={p.name} style={{ color: p.fill, fontFamily: MONO }}>
@@ -162,7 +162,7 @@ export default function ReportsPage() {
     return (
       <div>
         {/* ── TAB SWITCHER — cyber ── */}
-        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #2A2A3E', marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #3B4B3D', marginBottom: 16 }}>
           {TABS.map(({ label, path }) => {
             const isActive = pathname === path;
             return (
@@ -174,7 +174,7 @@ export default function ReportsPage() {
                   fontFamily: MONO,
                   fontSize: 14,
                   fontWeight: isActive ? 600 : 400,
-                  color: isActive ? '#F8F8F2' : '#4B5563',
+                  color: isActive ? '#F0FFF4' : '#6B7280',
                   background: 'none',
                   border: 'none',
                   borderBottom: isActive ? '2px solid #00FF88' : '2px solid transparent',
@@ -182,7 +182,7 @@ export default function ReportsPage() {
                   transition: 'color 100ms ease',
                 }}
                 onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = '#9CA3AF'; }}
-                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#4B5563'; }}
+                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#6B7280'; }}
               >
                 {label}
               </button>
@@ -203,8 +203,8 @@ export default function ReportsPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
 
           {/* Status Donut — cyber */}
-          <div style={{ background: '#111118', border: '1px solid #2A2A3E', borderRadius: 6, padding: 16, height: 240 }}>
-            <div style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', color: '#2A2A3E', letterSpacing: '0.06em', marginBottom: 12 }}>
+          <div style={{ background: '#111118', border: '1px solid #3B4B3D', borderRadius: 6, padding: 16, height: 240 }}>
+            <div style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.06em', marginBottom: 12 }}>
               Feature Status
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -229,8 +229,8 @@ export default function ReportsPage() {
                 </PieChart>
                 {/* Center label */}
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-                  <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: '#F8F8F2', lineHeight: 1 }}>24</div>
-                  <div style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563', marginTop: 2 }}>total</div>
+                  <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: '#F0FFF4', lineHeight: 1 }}>24</div>
+                  <div style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', marginTop: 2 }}>total</div>
                 </div>
               </div>
               {/* Legend */}
@@ -238,7 +238,7 @@ export default function ReportsPage() {
                 {cyberStatusData.map((d) => (
                   <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div style={{ width: 8, height: 8, background: d.color, flexShrink: 0 }} />
-                    <span style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563', flex: 1 }}>{d.name}</span>
+                    <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', flex: 1 }}>{d.name}</span>
                     <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280' }}>{d.value}</span>
                   </div>
                 ))}
@@ -247,14 +247,14 @@ export default function ReportsPage() {
           </div>
 
           {/* Quarter Progress — cyber */}
-          <div style={{ background: '#111118', border: '1px solid #2A2A3E', borderRadius: 6, padding: 16, height: 240 }}>
-            <div style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', color: '#2A2A3E', letterSpacing: '0.06em', marginBottom: 12 }}>
+          <div style={{ background: '#111118', border: '1px solid #3B4B3D', borderRadius: 6, padding: 16, height: 240 }}>
+            <div style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.06em', marginBottom: 12 }}>
               Quarter Progress
             </div>
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={quarterData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                <XAxis type="number" tick={{ fontSize: 11, fontFamily: MONO, fill: '#2A2A3E' }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="quarter" width={64} tick={{ fontSize: 11, fontFamily: MONO, fill: '#4B5563' }} axisLine={false} tickLine={false} />
+                <XAxis type="number" tick={{ fontSize: 11, fontFamily: MONO, fill: '#3B4B3D' }} axisLine={false} tickLine={false} />
+                <YAxis type="category" dataKey="quarter" width={64} tick={{ fontSize: 11, fontFamily: MONO, fill: '#6B7280' }} axisLine={false} tickLine={false} />
                 <Tooltip content={<CyberBarTooltip />} cursor={{ fill: 'rgba(0,255,136,0.03)' }} />
                 <Bar dataKey="done"     stackId="a" fill="#00FF88" name="done"     radius={0} />
                 <Bar dataKey="building" stackId="a" fill="#FFB800" name="building" radius={0} />
@@ -265,10 +265,10 @@ export default function ReportsPage() {
         </div>
 
         {/* ── FEATURE TABLE — cyber ── */}
-        <div style={{ marginBottom: 24, border: '1px solid #1A1A2A', background: '#0A0A0F' }}>
+        <div style={{ marginBottom: 24, border: '1px solid #3B4B3D', background: '#0A0A0F' }}>
           {/* Table header bar */}
-          <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #2A2A3E', background: '#0D0D17' }}>
-            <span style={{ fontFamily: MONO, fontSize: 11, textTransform: 'uppercase', color: '#2A2A3E', letterSpacing: '0.08em', fontWeight: 700 }}>
+          <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #3B4B3D', background: '#12121E' }}>
+            <span style={{ fontFamily: MONO, fontSize: 11, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.08em', fontWeight: 700 }}>
               {'// ALL_FEATURES'}
             </span>
             <button
@@ -278,8 +278,8 @@ export default function ReportsPage() {
                 alignItems: 'center',
                 gap: 6,
                 background: 'none',
-                border: '1px solid #2A2A3E',
-                color: '#4B5563',
+                border: '1px solid #3B4B3D',
+                color: '#6B7280',
                 fontFamily: MONO,
                 fontSize: 12,
                 padding: '4px 10px',
@@ -292,8 +292,8 @@ export default function ReportsPage() {
                 e.currentTarget.style.color = '#00FF88';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#2A2A3E';
-                e.currentTarget.style.color = '#4B5563';
+                e.currentTarget.style.borderColor = '#3B4B3D';
+                e.currentTarget.style.color = '#6B7280';
               }}
             >
               <Download size={14} />
@@ -303,7 +303,7 @@ export default function ReportsPage() {
 
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ height: 32, borderBottom: '1px solid #1A1A2A' }}>
+              <tr style={{ height: 32, borderBottom: '1px solid #2A2A3E' }}>
                 {([
                   { label: 'Title',     field: 'title'    as SortField },
                   { label: 'Status',    field: 'status'   as SortField },
@@ -321,7 +321,7 @@ export default function ReportsPage() {
                       fontFamily: MONO,
                       fontSize: 11,
                       textTransform: 'uppercase',
-                      color: '#2A2A3E',
+                      color: '#6B7280',
                       fontWeight: 700,
                       textAlign: 'left',
                       paddingLeft: 12,
@@ -333,7 +333,7 @@ export default function ReportsPage() {
                   >
                     {label}
                     {field && (
-                      <span style={{ marginLeft: 4, color: sortField === field ? '#00FF88' : '#2A2A3E' }}>
+                      <span style={{ marginLeft: 4, color: sortField === field ? '#00FF88' : '#4B5563' }}>
                         {sortField === field ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
                       </span>
                     )}
@@ -348,7 +348,7 @@ export default function ReportsPage() {
                 return (
                   <tr
                     key={f.id}
-                    style={{ height: 34, borderBottom: '1px solid #1A1A2A', background: i % 2 === 1 ? '#0D0D17' : '#0A0A0F' }}
+                    style={{ height: 34, borderBottom: '1px solid #2A2A3E', background: i % 2 === 1 ? '#0D0D17' : '#0A0A0F' }}
                     onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,255,136,0.03)'; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 1 ? '#0D0D17' : '#0A0A0F'; }}
                   >
@@ -372,26 +372,26 @@ export default function ReportsPage() {
                         <div style={{ width: 14, height: 14, borderRadius: '50%', background: ownerColor(f.owner), color: '#FFFFFF', fontSize: 7, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {ownerInitials(f.owner)}
                         </div>
-                        <span style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563' }}>{f.owner}</span>
+                        <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280' }}>{f.owner}</span>
                       </div>
                     </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#4B5563', whiteSpace: 'nowrap' }}>
+                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#6B7280', whiteSpace: 'nowrap' }}>
                       {f.quarter}
                     </td>
                     <td style={{ paddingLeft: 12, paddingRight: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div style={{ width: 60, height: 4, background: '#1A1A2A', position: 'relative', flexShrink: 0 }}>
+                        <div style={{ width: 60, height: 4, background: '#2A2A3E', position: 'relative', flexShrink: 0 }}>
                           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${f.progress * 100}%`, background: '#00FF88' }} />
                         </div>
-                        <span style={{ fontFamily: MONO, fontSize: 10, color: '#4B5563', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontFamily: MONO, fontSize: 10, color: '#6B7280', whiteSpace: 'nowrap' }}>
                           {Math.round(f.progress * 100)}%
                         </span>
                       </div>
                     </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#4B5563' }}>
+                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#6B7280' }}>
                       {f.jiraEpicId ?? '—'}
                     </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#4B5563', whiteSpace: 'nowrap' }}>
+                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#6B7280', whiteSpace: 'nowrap' }}>
                       {UPDATED[f.status] ?? '—'}
                     </td>
                   </tr>

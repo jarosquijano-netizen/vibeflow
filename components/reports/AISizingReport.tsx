@@ -51,7 +51,7 @@ export default function AISizingReport({ features }: AISizingReportProps) {
       <div
         style={{
           background: '#0A0A0F',
-          border: '1px solid #2A2A3E',
+          border: '1px solid #3B4B3D',
           borderLeft: '3px solid #BF00FF',
           boxShadow: 'inset 3px 0 12px rgba(191,0,255,0.1)',
           padding: 16,
@@ -74,7 +74,7 @@ export default function AISizingReport({ features }: AISizingReportProps) {
         {/* Table */}
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 12 }}>
           <thead>
-            <tr style={{ height: 28, borderBottom: '1px solid #1A1A2A' }}>
+            <tr style={{ height: 28, borderBottom: '1px solid #2A2A3E' }}>
               {['FEATURE', 'AI SUGGESTED', 'FINAL SIZE', 'ACCEPTED', 'RATIONALE'].map((h) => (
                 <th
                   key={h}
@@ -82,7 +82,7 @@ export default function AISizingReport({ features }: AISizingReportProps) {
                     fontFamily: MONO,
                     fontSize: 10,
                     textTransform: 'uppercase',
-                    color: '#2A2A3E',
+                    color: '#6B7280',
                     fontWeight: 700,
                     textAlign: 'left',
                     letterSpacing: '0.06em',
@@ -103,7 +103,7 @@ export default function AISizingReport({ features }: AISizingReportProps) {
                   key={f.id}
                   style={{
                     height: 34,
-                    borderBottom: '1px solid #1A1A2A',
+                    borderBottom: '1px solid #2A2A3E',
                     background: i % 2 === 1 ? '#0D0D17' : '#0A0A0F',
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,255,136,0.03)'; }}
@@ -172,7 +172,7 @@ export default function AISizingReport({ features }: AISizingReportProps) {
                     style={{
                       fontFamily: MONO,
                       fontSize: 11,
-                      color: '#4B5563',
+                      color: '#6B7280',
                       paddingLeft: 8,
                       maxWidth: 220,
                       overflow: 'hidden',
@@ -193,7 +193,7 @@ export default function AISizingReport({ features }: AISizingReportProps) {
           style={{
             marginTop: 12,
             paddingTop: 12,
-            borderTop: '1px solid #1A1A2A',
+            borderTop: '1px solid #2A2A3E',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',

@@ -46,11 +46,11 @@
 /* ------------------------------------------------------------------ */
 [data-theme="cyber"] {
   --color-bg-base: #0A0A0F;
-  --color-bg-surface: #1F1F25;
-  --color-bg-subtle: #1E1E2E;
-  --color-bg-overlay: #0D0D17;
-  --color-sidebar: #0D0D17;
-  --color-header: #0D0D17;
+  --color-bg-surface: #1A1A28;
+  --color-bg-subtle: #222230;
+  --color-bg-overlay: #12121E;
+  --color-sidebar: #12121E;
+  --color-header: #12121E;
   --color-accent: #00FF88;
   --color-accent-hover: #00CC6A;
   --color-accent-light: rgba(0,255,136,0.1);
@@ -61,12 +61,12 @@
   --color-danger: #FF4444;
   --color-ai: #BF00FF;
   --color-ai-light: rgba(191,0,255,0.1);
-  --color-text-primary: #E4E1E9;
-  --color-text-secondary: #9CA3AF;
-  --color-text-muted: #4B5563;
-  --color-text-mono: #9CA3AF;
-  --color-border: rgba(59,75,61,0.3);
-  --color-border-strong: rgba(59,75,61,0.6);
+  --color-text-primary: #F0FFF4;
+  --color-text-secondary: #B9CBB9;
+  --color-text-muted: #6B7280;
+  --color-text-mono: #B9CBB9;
+  --color-border: #3B4B3D;
+  --color-border-strong: #4B5B4D;
   --color-content-bg: #0A0A0F;
 
   /* Fonts — fallbacks used before next/font class hydrates */
@@ -132,7 +132,7 @@
 
 /* Active nav override (data-attribute driven) */
 [data-theme="cyber"] [data-nav-active="true"] {
-  background: #1F1F25 !important;
+  background: #1A1A28 !important;
   color: #00FF88 !important;
   border-right: 2px solid #00FF88 !important;
   border-left: none !important;
@@ -141,17 +141,29 @@
 /* Input terminal style */
 [data-theme="cyber"] input[type="text"],
 [data-theme="cyber"] input[type="search"] {
-  background: #1E1E2E;
+  background: #222230;
   border: none;
-  border-bottom: 2px solid rgba(59,75,61,0.3);
+  border-bottom: 2px solid #3B4B3D;
   border-radius: 0;
-  color: #E4E1E9;
+  color: #F0FFF4;
   font-family: 'JetBrains Mono', monospace;
 }
 [data-theme="cyber"] input:focus {
   border-bottom-color: #00FF88;
   box-shadow: none;
   outline: none;
+}
+
+/* Ensure readable placeholder text */
+[data-theme="cyber"] ::placeholder {
+  color: #4B5563 !important;
+  opacity: 1;
+}
+
+/* Ensure input/textarea text is bright */
+[data-theme="cyber"] input,
+[data-theme="cyber"] textarea {
+  color: #F0FFF4;
 }
 
 /* Primary button glow */

@@ -58,8 +58,8 @@ export default function FeatureDetailPanel({
             right: 0,
             height: '100%',
             width: 480,
-            background: '#0D0D17',
-            borderLeft: '1px solid #2A2A3E',
+            background: '#12121E',
+            borderLeft: '1px solid #3B4B3D',
             boxShadow: '-20px 0 60px rgba(0,0,0,0.5)',
             zIndex: 50,
             display: 'flex',
@@ -76,7 +76,7 @@ export default function FeatureDetailPanel({
               justifyContent: 'space-between',
               gap: 12,
               padding: '16px 24px',
-              borderBottom: '1px solid #2A2A3E',
+              borderBottom: '1px solid #3B4B3D',
               flexShrink: 0,
             }}
           >
@@ -86,7 +86,7 @@ export default function FeatureDetailPanel({
                   fontFamily: "'Space Grotesk', sans-serif",
                   fontSize: 16,
                   fontWeight: 700,
-                  color: '#F8F8F2',
+                  color: '#F0FFF4',
                   margin: 0,
                   lineHeight: 1.4,
                 }}
@@ -123,17 +123,17 @@ export default function FeatureDetailPanel({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#4B5563',
+                color: '#6B7280',
                 flexShrink: 0,
                 padding: 0,
                 transition: 'color 150ms ease, box-shadow 150ms ease',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#F8F8F2';
+                e.currentTarget.style.color = '#F0FFF4';
                 e.currentTarget.style.boxShadow = '0 0 8px rgba(255,68,68,0.3)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#4B5563';
+                e.currentTarget.style.color = '#6B7280';
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
@@ -164,8 +164,8 @@ export default function FeatureDetailPanel({
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: 10,
-                  color: '#9CA3AF',
-                  border: '1px solid #2A2A3E',
+                  color: '#B9CBB9',
+                  border: '1px solid #3B4B3D',
                   padding: '2px 8px',
                 }}
               >
@@ -197,7 +197,7 @@ export default function FeatureDetailPanel({
                   fontSize: 10,
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
-                  color: '#4B5563',
+                  color: '#6B7280',
                   marginBottom: 6,
                 }}
               >
@@ -207,12 +207,12 @@ export default function FeatureDetailPanel({
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: 12,
-                  color: '#6B7280',
+                  color: '#9CA3AF',
                   lineHeight: 1.6,
                   margin: 0,
-                  background: '#0A0A0F',
+                  background: '#111118',
                   padding: 12,
-                  borderLeft: '2px solid #2A2A3E',
+                  borderLeft: '2px solid #3B4B3D',
                 }}
               >
                 {feature.problemStatement}
@@ -227,8 +227,8 @@ export default function FeatureDetailPanel({
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
                       fontSize: 10,
-                      color: '#4B5563',
-                      border: '1px solid #2A2A3E',
+                      color: '#6B7280',
+                      border: '1px solid #3B4B3D',
                       background: '#0E0E13',
                       padding: '3px 8px',
                     }}
@@ -258,7 +258,7 @@ export default function FeatureDetailPanel({
             )}
 
             {/* Divider */}
-            <div style={{ height: 1, background: '#1A1A2A' }} />
+            <div style={{ height: 1, background: '#2A2A3E' }} />
 
             {/* AI Size Estimator */}
             <AISizeEstimator

@@ -206,19 +206,19 @@ export default function CommandPalette() {
             display: 'flex',
             alignItems: 'center',
             gap: 6,
-            background: '#0D0D17',
-            borderBottom: '1px solid #1A1A2A',
-            borderTop: '1px solid #1A1A2A',
+            background: '#12121E',
+            borderBottom: '1px solid #3B4B3D',
+            borderTop: '1px solid #3B4B3D',
           }}
         >
-          <span style={{ color: '#2A2A3E', display: 'flex' }}>{icon}</span>
+          <span style={{ color: '#6B7280', display: 'flex' }}>{icon}</span>
           <span
             style={{
               fontFamily: MONO,
               fontSize: 10,
               textTransform: 'uppercase',
               fontWeight: 700,
-              color: '#2A2A3E',
+              color: '#6B7280',
               letterSpacing: '0.06em',
             }}
           >
@@ -283,8 +283,8 @@ export default function CommandPalette() {
             left: '50%',
             transform: 'translateX(-50%)',
             width: 560,
-            background: '#0D0D17',
-            border: '1px solid #2A2A3E',
+            background: '#12121E',
+            border: '1px solid #3B4B3D',
             boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,255,136,0.05)',
             zIndex: 101,
             borderRadius: 0,
@@ -299,7 +299,7 @@ export default function CommandPalette() {
               display: 'flex',
               alignItems: 'center',
               gap: 10,
-              borderBottom: '1px solid #2A2A3E',
+              borderBottom: '1px solid #3B4B3D',
             }}
           >
             <span style={{ fontFamily: MONO, fontSize: 16, color: '#00FF88', flexShrink: 0, fontWeight: 700 }}>
@@ -316,15 +316,15 @@ export default function CommandPalette() {
                 outline: 'none',
                 fontSize: 14,
                 fontFamily: MONO,
-                color: '#F8F8F2',
+                color: '#F0FFF4',
                 background: 'transparent',
               }}
             />
             <kbd
               style={{
                 background: '#0E0E13',
-                border: '1px solid #2A2A3E',
-                color: '#2A2A3E',
+                border: '1px solid #3B4B3D',
+                color: '#6B7280',
                 fontSize: 10,
                 fontFamily: MONO,
                 padding: '2px 8px',
@@ -345,7 +345,7 @@ export default function CommandPalette() {
                   paddingBottom: 32,
                   fontFamily: MONO,
                   fontSize: 12,
-                  color: '#2A2A3E',
+                  color: '#6B7280',
                 }}
               >
                 // NO_RESULTS_FOR &ldquo;{query}&rdquo;
@@ -366,7 +366,7 @@ export default function CommandPalette() {
                       idx={idx}
                       left={
                         <>
-                          <Kanban size={14} style={{ color: '#2A2A3E', flexShrink: 0 }} />
+                          <Kanban size={14} style={{ color: '#6B7280', flexShrink: 0 }} />
                           <span style={{ flex: 1, fontSize: 12, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: MONO }}>
                             {item.title}
                           </span>
@@ -374,8 +374,8 @@ export default function CommandPalette() {
                       }
                       right={
                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                          <span style={{ fontSize: 10, color: '#2A2A3E', background: '#0E0E13', border: '1px solid #1A1A2A', padding: '1px 6px', fontFamily: MONO }}>FEATURE</span>
-                          <span style={{ fontSize: 10, color: CYBER_STATUS_COLOR[item.status] ?? '#2A2A3E', background: '#0E0E13', border: '1px solid #1A1A2A', padding: '1px 6px', fontFamily: MONO }}>{item.status}</span>
+                          <span style={{ fontSize: 10, color: '#6B7280', background: '#0E0E13', border: '1px solid #3B4B3D', padding: '1px 6px', fontFamily: MONO }}>FEATURE</span>
+                          <span style={{ fontSize: 10, color: CYBER_STATUS_COLOR[item.status] ?? '#4B5563', background: '#0E0E13', border: '1px solid #3B4B3D', padding: '1px 6px', fontFamily: MONO }}>{item.status}</span>
                         </div>
                       }
                     />
@@ -398,7 +398,7 @@ export default function CommandPalette() {
                       idx={idx}
                       left={
                         <>
-                          <BookMarked size={14} style={{ color: '#2A2A3E', flexShrink: 0 }} />
+                          <BookMarked size={14} style={{ color: '#6B7280', flexShrink: 0 }} />
                           <span style={{ flex: 1, fontSize: 12, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: MONO }}>
                             {item.title}
                           </span>
@@ -406,8 +406,8 @@ export default function CommandPalette() {
                       }
                       right={
                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                          <span style={{ fontSize: 10, color: '#2A2A3E', background: '#0E0E13', border: '1px solid #1A1A2A', padding: '1px 6px', fontFamily: MONO }}>PROMPT</span>
-                          <span style={{ fontSize: 10, color: '#4B5563', background: '#0E0E13', border: '1px solid #1A1A2A', padding: '1px 6px', fontFamily: MONO }}>{item.tool}</span>
+                          <span style={{ fontSize: 10, color: '#6B7280', background: '#0E0E13', border: '1px solid #3B4B3D', padding: '1px 6px', fontFamily: MONO }}>PROMPT</span>
+                          <span style={{ fontSize: 10, color: '#6B7280', background: '#0E0E13', border: '1px solid #3B4B3D', padding: '1px 6px', fontFamily: MONO }}>{item.tool}</span>
                         </div>
                       }
                     />
@@ -430,7 +430,7 @@ export default function CommandPalette() {
                       idx={idx}
                       left={
                         <>
-                          <Zap size={14} style={{ color: '#2A2A3E', flexShrink: 0 }} />
+                          <Zap size={14} style={{ color: '#6B7280', flexShrink: 0 }} />
                           <span style={{ flex: 1, fontSize: 12, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: MONO }}>
                             {item.title}
                           </span>
@@ -438,8 +438,8 @@ export default function CommandPalette() {
                       }
                       right={
                         <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                          <span style={{ fontSize: 10, color: '#2A2A3E', background: '#0E0E13', border: '1px solid #1A1A2A', padding: '1px 6px', fontFamily: MONO }}>SESSION</span>
-                          <span style={{ fontSize: 11, color: '#4B5563', fontFamily: MONO }}>{item.date}</span>
+                          <span style={{ fontSize: 10, color: '#6B7280', background: '#0E0E13', border: '1px solid #3B4B3D', padding: '1px 6px', fontFamily: MONO }}>SESSION</span>
+                          <span style={{ fontSize: 11, color: '#6B7280', fontFamily: MONO }}>{item.date}</span>
                         </div>
                       }
                     />
@@ -462,7 +462,7 @@ export default function CommandPalette() {
                       idx={idx}
                       left={
                         <>
-                          <span style={{ color: '#2A2A3E', display: 'flex', flexShrink: 0 }}>{item.icon}</span>
+                          <span style={{ color: '#6B7280', display: 'flex', flexShrink: 0 }}>{item.icon}</span>
                           <span style={{ flex: 1, fontSize: 12, color: '#9CA3AF', fontFamily: MONO }}>
                             {item.label}
                           </span>
@@ -470,7 +470,7 @@ export default function CommandPalette() {
                       }
                       right={
                         item.shortcut ? (
-                          <kbd style={{ background: '#0E0E13', border: '1px solid #2A2A3E', fontSize: 10, fontFamily: MONO, padding: '1px 6px', flexShrink: 0, color: '#4B5563' }}>
+                          <kbd style={{ background: '#0E0E13', border: '1px solid #3B4B3D', fontSize: 10, fontFamily: MONO, padding: '1px 6px', flexShrink: 0, color: '#6B7280' }}>
                             {item.shortcut}
                           </kbd>
                         ) : null
@@ -485,7 +485,7 @@ export default function CommandPalette() {
           {/* Footer */}
           <div
             style={{
-              borderTop: '1px solid #1A1A2A',
+              borderTop: '1px solid #3B4B3D',
               paddingLeft: 16,
               paddingRight: 16,
               paddingTop: 8,
@@ -505,7 +505,7 @@ export default function CommandPalette() {
                 key={key}
                 style={{
                   fontSize: 10,
-                  color: '#2A2A3E',
+                  color: '#6B7280',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 4,
@@ -515,12 +515,12 @@ export default function CommandPalette() {
                 <kbd
                   style={{
                     background: '#0E0E13',
-                    border: '1px solid #2A2A3E',
+                    border: '1px solid #3B4B3D',
                     padding: '1px 4px',
                     fontSize: 10,
                     fontFamily: MONO,
                     borderRadius: 0,
-                    color: '#4B5563',
+                    color: '#6B7280',
                   }}
                 >
                   {key}
@@ -532,7 +532,7 @@ export default function CommandPalette() {
         </div>
 
         <style>{`
-          input::placeholder { color: #2A2A3E; }
+          input::placeholder { color: #4B5563; }
         `}</style>
       </>
     );

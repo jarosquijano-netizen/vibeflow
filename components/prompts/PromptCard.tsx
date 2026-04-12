@@ -73,7 +73,7 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
         style={{
           position: 'relative',
           background: '#111118',
-          border: cardHovered ? `1px solid ${cyberTool.border}` : '1px solid #2A2A3E',
+          border: cardHovered ? `1px solid ${cyberTool.border}` : '1px solid #3B4B3D',
           borderTop: `3px solid ${cyberTool.color}`,
           borderRadius: 6,
           overflow: 'hidden',
@@ -113,7 +113,7 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
                 style={{
                   fontFamily: MONO,
                   fontSize: 10,
-                  color: '#4B5563',
+                  color: '#6B7280',
                   marginLeft: 4,
                 }}
               >
@@ -127,7 +127,7 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
                   key={star}
                   style={{
                     fontSize: 10,
-                    color: star <= prompt.quality ? '#FFB800' : '#2A2A3E',
+                    color: star <= prompt.quality ? '#FFB800' : '#3B4B3D',
                     lineHeight: 1,
                   }}
                 >
@@ -142,9 +142,9 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
             style={{
               fontFamily: MONO,
               fontSize: 10,
-              color: '#4B5563',
+              color: '#6B7280',
               background: '#0E0E13',
-              border: '1px solid #2A2A3E',
+              border: '1px solid #3B4B3D',
               padding: '1px 6px',
               flexShrink: 0,
             }}
@@ -160,7 +160,7 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
             fontFamily: MONO,
             fontSize: 14,
             fontWeight: 600,
-            color: '#F8F8F2',
+            color: '#F0FFF4',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
@@ -175,8 +175,8 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
         <div style={{ padding: '0 12px 8px' }}>
           <div
             style={{
-              background: '#0A0A0F',
-              borderLeft: '2px solid #2A2A3E',
+              background: '#111118',
+              borderLeft: '2px solid #3B4B3D',
               padding: 8,
             }}
           >
@@ -184,7 +184,7 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
               style={{
                 fontFamily: MONO,
                 fontSize: 11,
-                color: '#4B5563',
+                color: '#6B7280',
                 lineHeight: 1.5,
               }}
             >
@@ -215,8 +215,8 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
               key={tag}
               style={{
                 background: '#0E0E13',
-                border: '1px solid #2A2A3E',
-                color: '#4B5563',
+                border: '1px solid #3B4B3D',
+                color: '#6B7280',
                 fontFamily: MONO,
                 fontSize: 10,
                 padding: '1px 6px',
@@ -229,8 +229,8 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
             <span
               style={{
                 background: '#0E0E13',
-                border: '1px solid #2A2A3E',
-                color: '#4B5563',
+                border: '1px solid #3B4B3D',
+                color: '#6B7280',
                 fontFamily: MONO,
                 fontSize: 10,
                 padding: '1px 6px',
@@ -250,7 +250,7 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
             alignItems: 'center',
           }}
         >
-          <span style={{ fontFamily: MONO, fontSize: 11, color: '#2A2A3E' }}>
+          <span style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563' }}>
             {prompt.usedInFeatures.length > 0
               ? `Used in ${prompt.usedInFeatures.length} feature${prompt.usedInFeatures.length !== 1 ? 's' : ''}`
               : 'Not used yet'}
@@ -293,7 +293,7 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: copyHovered ? '#00FF88' : '#4B5563',
+                color: copyHovered ? '#00FF88' : '#6B7280',
                 boxShadow: copyHovered ? '0 0 8px rgba(0,255,136,0.3)' : 'none',
                 padding: 0,
                 borderRadius: 0,
@@ -315,12 +315,12 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#4B5563',
+                color: '#6B7280',
                 padding: 0,
                 borderRadius: 0,
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = '#6B7280'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = '#4B5563'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#9CA3AF'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#6B7280'; }}
               title="Link"
             >
               <Link size={14} />

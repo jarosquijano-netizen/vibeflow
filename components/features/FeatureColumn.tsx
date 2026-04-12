@@ -110,7 +110,7 @@ export default function FeatureColumn({ status, features, isOver = false, onCard
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: addHovered ? cyberCfg.color : '#4B5563',
+                color: addHovered ? cyberCfg.color : '#6B7280',
                 fontSize: 18,
                 lineHeight: 1,
                 padding: 0,
@@ -134,8 +134,8 @@ export default function FeatureColumn({ status, features, isOver = false, onCard
             display: 'flex',
             flexDirection: 'column',
             gap: 8,
-            background: isOver ? cyberCfg.bg : 'rgba(13,13,23,0.4)',
-            border: `1px solid ${isOver ? `${cyberCfg.color}80` : '#1A1A2A'}`,
+            background: isOver ? cyberCfg.bg : '#0E0E16',
+            border: `1px solid ${isOver ? `${cyberCfg.color}80` : '#3B4B3D'}`,
             borderTop: 'none',
             borderRadius: '0 0 6px 6px',
             transition: 'border-color 150ms ease, background 150ms ease',
@@ -156,7 +156,7 @@ export default function FeatureColumn({ status, features, isOver = false, onCard
                   style={{
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 11,
-                    color: '#2A2A3E',
+                    color: '#4B5563',
                   }}
                 >
                   {`// no_${status.toLowerCase()}_features`}
@@ -165,7 +165,7 @@ export default function FeatureColumn({ status, features, isOver = false, onCard
                   style={{
                     fontFamily: "'JetBrains Mono', monospace",
                     fontSize: 10,
-                    color: '#1A1A2A',
+                    color: '#3B4B3D',
                     marginTop: 4,
                   }}
                 >

@@ -76,8 +76,8 @@ export default function KeyboardShortcuts() {
             left: '50%',
             transform: 'translate(-50%, -50%)',
             width: 480,
-            background: '#0D0D17',
-            border: '1px solid #2A2A3E',
+            background: '#12121E',
+            border: '1px solid #3B4B3D',
             boxShadow: '0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,255,136,0.03)',
             zIndex: 101,
             borderRadius: 0,
@@ -90,7 +90,7 @@ export default function KeyboardShortcuts() {
               paddingRight: 24,
               paddingTop: 16,
               paddingBottom: 16,
-              borderBottom: '1px solid #1A1A2A',
+              borderBottom: '1px solid #2A2A3E',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
@@ -117,11 +117,11 @@ export default function KeyboardShortcuts() {
                 padding: 0,
                 display: 'flex',
                 alignItems: 'center',
-                color: '#2A2A3E',
+                color: '#6B7280',
                 transition: 'color 150ms ease',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.color = '#00FF88'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = '#2A2A3E'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#6B7280'; }}
             >
               <X size={18} />
             </button>
@@ -240,17 +240,17 @@ function ShortcutRow({ combo, desc, isCyber }: { combo: string[]; desc: string; 
           {combo.map((key, i) => (
             <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {i > 0 && combo.length > 1 && (
-                <span style={{ fontFamily: MONO, fontSize: 10, color: '#2A2A3E', margin: '0 1px' }}>+</span>
+                <span style={{ fontFamily: MONO, fontSize: 10, color: '#4B5563', margin: '0 1px' }}>+</span>
               )}
               <kbd
                 style={{
                   fontFamily: MONO,
                   fontSize: 11,
                   background: '#0E0E13',
-                  border: '1px solid #2A2A3E',
+                  border: '1px solid #3B4B3D',
                   padding: '2px 8px',
                   borderRadius: 0,
-                  color: '#4B5563',
+                  color: '#6B7280',
                 }}
               >
                 {key}
@@ -258,7 +258,7 @@ function ShortcutRow({ combo, desc, isCyber }: { combo: string[]; desc: string; 
             </span>
           ))}
         </div>
-        <span style={{ fontSize: 12, color: '#4B5563', fontFamily: MONO }}>{desc}</span>
+        <span style={{ fontSize: 12, color: '#6B7280', fontFamily: MONO }}>{desc}</span>
       </div>
     );
   }

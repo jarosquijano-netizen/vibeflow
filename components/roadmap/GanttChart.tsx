@@ -73,7 +73,7 @@ export default function GanttChart({ features }: GanttChartProps) {
         style={{
           overflowX: 'auto',
           position: 'relative',
-          border: '1px solid #2A2A3E',
+          border: '1px solid #3B4B3D',
           background: '#0A0A0F',
         }}
       >
@@ -88,7 +88,7 @@ export default function GanttChart({ features }: GanttChartProps) {
               display: 'flex',
               height: HEADER_HEIGHT,
               background: '#0D0D17',
-              borderBottom: '1px solid #2A2A3E',
+              borderBottom: '1px solid #3B4B3D',
             }}
           >
             {/* Label zone */}
@@ -97,7 +97,7 @@ export default function GanttChart({ features }: GanttChartProps) {
                 width: LABEL_WIDTH,
                 flexShrink: 0,
                 background: '#0A0A0F',
-                borderRight: '1px solid #1A1A2A',
+                borderRight: '1px solid #2A2A3E',
                 position: 'sticky',
                 left: 0,
                 zIndex: 11,
@@ -118,10 +118,10 @@ export default function GanttChart({ features }: GanttChartProps) {
                     fontFamily: MONO,
                     fontSize: 11,
                     textTransform: 'uppercase',
-                    color: '#2A2A3E',
+                    color: '#6B7280',
                     letterSpacing: '0.05em',
                     position: 'relative',
-                    borderRight: '1px solid #1A1A2A',
+                    borderRight: '1px solid #2A2A3E',
                   }}
                 >
                   {month}
@@ -133,7 +133,7 @@ export default function GanttChart({ features }: GanttChartProps) {
                       top: 0,
                       bottom: 0,
                       width: 1,
-                      background: '#1A1A2A',
+                      background: '#2A2A3E',
                       pointerEvents: 'none',
                     }}
                   />
@@ -185,8 +185,8 @@ export default function GanttChart({ features }: GanttChartProps) {
                 style={{
                   display: 'flex',
                   height: QUARTER_HEIGHT,
-                  borderBottom: '1px solid #1A1A2A',
-                  borderTop: '1px solid #1A1A2A',
+                  borderBottom: '1px solid #2A2A3E',
+                  borderTop: '1px solid #2A2A3E',
                 }}
               >
                 <div
@@ -201,7 +201,7 @@ export default function GanttChart({ features }: GanttChartProps) {
                     position: 'sticky',
                     left: 0,
                     zIndex: 3,
-                    borderRight: '1px solid #1A1A2A',
+                    borderRight: '1px solid #2A2A3E',
                   }}
                 >
                   <span
@@ -209,7 +209,7 @@ export default function GanttChart({ features }: GanttChartProps) {
                       fontFamily: MONO,
                       fontSize: 12,
                       textTransform: 'uppercase',
-                      color: '#2A2A3E',
+                      color: '#6B7280',
                       fontWeight: 700,
                       letterSpacing: '0.06em',
                     }}

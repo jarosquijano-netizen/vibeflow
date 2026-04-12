@@ -136,10 +136,10 @@ export default function AISizeEstimator({
               gap: 6,
               marginBottom: 10,
               padding: '4px 8px',
-              background: '#0A0A0F',
-              border: '1px dashed rgba(59,75,61,0.3)',
+              background: '#111118',
+              border: '1px dashed #3B4B3D',
               fontSize: 10,
-              color: '#4B5563',
+              color: '#6B7280',
               fontFamily: MONO,
             }}
           >
@@ -158,8 +158,8 @@ export default function AISizeEstimator({
                   paddingRight: 8,
                   fontSize: 10,
                   background: 'none',
-                  border: `1px solid ${uiState === s ? '#BF00FF' : '#2A2A3E'}`,
-                  color: uiState === s ? '#BF00FF' : '#4B5563',
+                  border: `1px solid ${uiState === s ? '#BF00FF' : '#3B4B3D'}`,
+                  color: uiState === s ? '#BF00FF' : '#6B7280',
                   cursor: 'pointer',
                   borderRadius: 0,
                   fontFamily: MONO,
@@ -180,7 +180,7 @@ export default function AISizeEstimator({
               fontSize: 10,
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
-              color: '#4B5563',
+              color: '#6B7280',
               marginBottom: 6,
             }}
           >
@@ -201,8 +201,8 @@ export default function AISizeEstimator({
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     background: active ? `${col}1A` : '#0E0E13',
-                    color: active ? col : '#4B5563',
-                    border: `1px solid ${active ? col : '#2A2A3E'}`,
+                    color: active ? col : '#6B7280',
+                    border: `1px solid ${active ? col : '#3B4B3D'}`,
                     boxShadow: active ? `0 0 10px ${col}4D` : 'none',
                     cursor: 'pointer',
                     transition: 'all 100ms ease',
@@ -217,8 +217,8 @@ export default function AISizeEstimator({
                   }}
                   onMouseLeave={(e) => {
                     if (!active) {
-                      e.currentTarget.style.borderColor = '#2A2A3E';
-                      e.currentTarget.style.color = '#4B5563';
+                      e.currentTarget.style.borderColor = '#3B4B3D';
+                      e.currentTarget.style.color = '#6B7280';
                     }
                   }}
                 >
@@ -231,7 +231,7 @@ export default function AISizeEstimator({
             style={{
               fontFamily: MONO,
               fontSize: 10,
-              color: '#4B5563',
+              color: '#6B7280',
               marginTop: 4,
             }}
           >
@@ -254,8 +254,8 @@ export default function AISizeEstimator({
         {/* AI Estimate Panel — cyber */}
         <div
           style={{
-            background: '#0A0A0F',
-            border: '1px solid #2A2A3E',
+            background: '#111118',
+            border: '1px solid #3B4B3D',
             borderLeft: '3px solid #BF00FF',
             boxShadow: 'inset 3px 0 12px rgba(191,0,255,0.1)',
           }}
@@ -267,7 +267,7 @@ export default function AISizeEstimator({
               justifyContent: 'space-between',
               alignItems: 'center',
               padding: '10px 12px 8px',
-              borderBottom: '1px solid #1A1A2A',
+              borderBottom: '1px solid #2A2A3E',
             }}
           >
             <span
@@ -283,7 +283,7 @@ export default function AISizeEstimator({
               ✦ AI_SIZE_ESTIMATE
             </span>
             <span title="AI analyzes title and problem statement to suggest complexity">
-              <Info size={14} style={{ color: '#4B5563', cursor: 'default', display: 'block' }} />
+              <Info size={14} style={{ color: '#6B7280', cursor: 'default', display: 'block' }} />
             </span>
           </div>
 
@@ -295,7 +295,7 @@ export default function AISizeEstimator({
                   style={{
                     fontFamily: MONO,
                     fontSize: 11,
-                    color: '#4B5563',
+                    color: '#6B7280',
                     fontStyle: 'italic',
                     margin: 0,
                   }}
@@ -334,7 +334,7 @@ export default function AISizeEstimator({
                     style={{
                       fontFamily: MONO,
                       fontSize: 10,
-                      color: '#4B5563',
+                      color: '#6B7280',
                       textAlign: 'center',
                       margin: '6px 0 0',
                     }}
@@ -413,7 +413,7 @@ export default function AISizeEstimator({
                   style={{
                     fontFamily: MONO,
                     fontSize: 10,
-                    color: '#4B5563',
+                    color: '#6B7280',
                     textTransform: 'uppercase',
                     letterSpacing: '0.06em',
                     flexShrink: 0,
@@ -472,7 +472,7 @@ export default function AISizeEstimator({
                     width: '100%',
                     background: 'none',
                     border: 'none',
-                    borderTop: '1px solid #1A1A2A',
+                    borderTop: '1px solid #2A2A3E',
                     cursor: 'pointer',
                     padding: '6px 0 4px',
                     fontFamily: MONO,
@@ -484,15 +484,15 @@ export default function AISizeEstimator({
                       fontSize: 10,
                       textTransform: 'uppercase',
                       letterSpacing: '0.06em',
-                      color: '#4B5563',
+                      color: '#6B7280',
                     }}
                   >
                     {'// RATIONALE'}
                   </span>
                   {rationaleExpanded ? (
-                    <ChevronUp size={12} style={{ color: '#4B5563' }} />
+                    <ChevronUp size={12} style={{ color: '#6B7280' }} />
                   ) : (
-                    <ChevronDown size={12} style={{ color: '#4B5563' }} />
+                    <ChevronDown size={12} style={{ color: '#6B7280' }} />
                   )}
                 </button>
                 {rationaleExpanded && (
@@ -503,7 +503,7 @@ export default function AISizeEstimator({
                       color: '#9CA3AF',
                       lineHeight: 1.6,
                       margin: '4px 0 0',
-                      borderLeft: '2px solid #1A1A2A',
+                      borderLeft: '2px solid #2A2A3E',
                       paddingLeft: 8,
                     }}
                   >
@@ -519,7 +519,7 @@ export default function AISizeEstimator({
                     key={f}
                     style={{
                       background: '#0E0E13',
-                      border: '1px solid #2A2A3E',
+                      border: '1px solid #3B4B3D',
                       color: '#6B7280',
                       fontFamily: MONO,
                       fontSize: 10,
@@ -537,7 +537,7 @@ export default function AISizeEstimator({
                 style={{
                   fontFamily: MONO,
                   fontSize: 10,
-                  color: '#4B5563',
+                  color: '#6B7280',
                   fontStyle: 'italic',
                   margin: 0,
                 }}
@@ -587,7 +587,7 @@ export default function AISizeEstimator({
                       paddingRight: 12,
                       background: 'none',
                       border: 'none',
-                      color: '#4B5563',
+                      color: '#6B7280',
                       fontFamily: MONO,
                       fontSize: 11,
                       cursor: 'pointer',
@@ -598,7 +598,7 @@ export default function AISizeEstimator({
                       e.currentTarget.style.color = '#9CA3AF';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.color = '#4B5563';
+                      e.currentTarget.style.color = '#6B7280';
                     }}
                   >
                     override

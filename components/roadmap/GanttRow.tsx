@@ -118,7 +118,7 @@ export default function GanttRow({ feature, rowIndex }: GanttRowProps) {
         style={{
           display: 'flex',
           height: ROW_HEIGHT,
-          borderBottom: '1px solid #1A1A2A',
+          borderBottom: '1px solid #2A2A3E',
         }}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => { setHovered(false); setMousePos(null); setBarHovered(false); }}
@@ -137,7 +137,7 @@ export default function GanttRow({ feature, rowIndex }: GanttRowProps) {
             position: 'sticky',
             left: 0,
             zIndex: 2,
-            borderRight: '1px solid #1A1A2A',
+            borderRight: '1px solid #2A2A3E',
             transition: 'background 100ms ease',
           }}
         >
@@ -168,7 +168,7 @@ export default function GanttRow({ feature, rowIndex }: GanttRowProps) {
                 fontFamily: MONO,
                 fontSize: 11,
                 fontWeight: 600,
-                color: '#9CA3AF',
+                color: '#B9CBB9',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -217,7 +217,7 @@ export default function GanttRow({ feature, rowIndex }: GanttRowProps) {
                 top: 0,
                 bottom: 0,
                 width: 1,
-                background: '#1A1A2A',
+                background: '#2A2A3E',
                 pointerEvents: 'none',
               }}
             />
@@ -294,8 +294,8 @@ export default function GanttRow({ feature, rowIndex }: GanttRowProps) {
               left: mousePos.x,
               top: mousePos.y,
               zIndex: 1000,
-              background: '#0D0D17',
-              border: '1px solid #2A2A3E',
+              background: '#12121E',
+              border: '1px solid #3B4B3D',
               padding: 12,
               minWidth: 180,
               maxWidth: 240,
@@ -304,28 +304,28 @@ export default function GanttRow({ feature, rowIndex }: GanttRowProps) {
               boxShadow: '0 0 20px rgba(0,0,0,0.5)',
             }}
           >
-            <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 13, color: '#F8F8F2', marginBottom: 6 }}>
+            <div style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, fontSize: 13, color: '#F0FFF4', marginBottom: 6 }}>
               {feature.title}
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563', minWidth: 48 }}>owner</span>
+                <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', minWidth: 48 }}>owner</span>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: '#9CA3AF' }}>{feature.owner}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563', minWidth: 48 }}>status</span>
+                <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', minWidth: 48 }}>status</span>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: cyberCfg.color }}>{feature.status}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563', minWidth: 48 }}>size</span>
+                <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', minWidth: 48 }}>size</span>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: '#9CA3AF' }}>{feature.size}</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563', minWidth: 48 }}>backlog</span>
+                <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', minWidth: 48 }}>backlog</span>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: '#9CA3AF' }}>{Math.round(feature.progress * 10)}/10 done</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <span style={{ fontFamily: MONO, fontSize: 11, color: '#4B5563', minWidth: 48 }}>jira</span>
+                <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', minWidth: 48 }}>jira</span>
                 <span style={{ fontFamily: MONO, fontSize: 11, color: '#9CA3AF' }}>{feature.jiraEpicId ?? '—'}</span>
               </div>
             </div>

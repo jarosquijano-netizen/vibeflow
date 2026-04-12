@@ -164,8 +164,8 @@ function CyberNavItem({
         fontFamily: "'Space Grotesk', sans-serif",
         fontSize: 14,
         fontWeight: 500,
-        color: active ? '#00FF88' : '#4B5563',
-        background: active ? '#1F1F25' : 'transparent',
+        color: active ? '#00FF88' : '#6B7280',
+        background: active ? '#1A1A28' : 'transparent',
         borderRight: isActive ? '2px solid #00FF88' : '2px solid transparent',
         textDecoration: 'none',
         transition: 'all 100ms ease',
@@ -176,7 +176,7 @@ function CyberNavItem({
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <Icon
           size={16}
-          style={{ color: active ? '#00FF88' : '#4B5563', display: 'block', flexShrink: 0 }}
+          style={{ color: active ? '#00FF88' : '#6B7280', display: 'block', flexShrink: 0 }}
         />
         {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{label}</span>}
       </div>
@@ -246,8 +246,8 @@ export default function Sidebar() {
           minWidth: width,
           maxWidth: width,
           height: '100vh',
-          background: '#0D0D17',
-          borderRight: '1px solid rgba(59,75,61,0.3)',
+          background: '#12121E',
+          borderRight: '1px solid #3B4B3D',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
@@ -284,8 +284,8 @@ export default function Sidebar() {
                 style={{
                   fontFamily: "'JetBrains Mono', monospace",
                   fontSize: 10,
-                  color: '#4B5563',
                   textTransform: 'uppercase',
+                  color: '#6B7280',
                   letterSpacing: '0.12em',
                   marginTop: 4,
                 }}
@@ -303,8 +303,8 @@ export default function Sidebar() {
           <div style={{ paddingLeft: 16, paddingRight: 16, marginBottom: 12, flexShrink: 0 }}>
             <div
               style={{
-                background: '#1E1E2E',
-                border: '1px solid rgba(59,75,61,0.5)',
+                background: '#1A1A28',
+                border: '1px solid #3B4B3D',
                 borderRadius: 12,
                 padding: 12,
               }}
@@ -350,7 +350,7 @@ export default function Sidebar() {
                       fontFamily: "'Space Grotesk', sans-serif",
                       fontSize: 12,
                       fontWeight: 700,
-                      color: '#E4E1E9',
+                      color: '#F0FFF4',
                       textTransform: 'uppercase',
                       letterSpacing: '0.04em',
                       lineHeight: 1.2,
@@ -382,7 +382,7 @@ export default function Sidebar() {
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
                       fontSize: 9,
-                      color: '#4B5563',
+                      color: '#6B7280',
                       textTransform: 'uppercase',
                       letterSpacing: '0.08em',
                     }}
@@ -432,7 +432,7 @@ export default function Sidebar() {
                     fontSize: 9,
                     textTransform: 'uppercase',
                     letterSpacing: '0.1em',
-                    color: '#4B5563',
+                    color: '#6B7280',
                     paddingLeft: 16,
                     paddingRight: 16,
                     marginBottom: 2,
@@ -478,8 +478,8 @@ export default function Sidebar() {
             <div
               style={{
                 margin: '0 16px 12px',
-                background: '#1B1B20',
-                border: '1px solid rgba(59,75,61,0.2)',
+                background: '#1A1A28',
+                border: '1px solid #3B4B3D',
                 borderRadius: 8,
                 padding: '10px 12px',
                 display: 'flex',
@@ -518,13 +518,13 @@ export default function Sidebar() {
               height: 32,
               background: 'none',
               border: 'none',
-              borderTop: '1px solid rgba(59,75,61,0.3)',
+              borderTop: '1px solid #3B4B3D',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 6,
-              color: '#4B5563',
+              color: '#6B7280',
               fontSize: 11,
               fontFamily: "'JetBrains Mono', monospace",
               textTransform: 'uppercase',
@@ -532,7 +532,7 @@ export default function Sidebar() {
               transition: 'color 150ms ease',
             }}
             onMouseEnter={(e) => { e.currentTarget.style.color = '#00FF88'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = '#4B5563'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = '#6B7280'; }}
           >
             {collapsed ? (
               <ChevronRight size={14} />
