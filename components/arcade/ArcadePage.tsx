@@ -24,7 +24,7 @@ export default function ArcadePage() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100%',
         background: '#0A0A0F',
         color: '#E4E1E9',
         position: 'relative',
@@ -34,7 +34,7 @@ export default function ArcadePage() {
       {/* Scanlines overlay */}
       <div
         style={{
-          position: 'fixed',
+          position: 'absolute',
           inset: 0,
           backgroundImage:
             'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)',
@@ -46,7 +46,7 @@ export default function ArcadePage() {
       {/* Ambient background glow */}
       <div
         style={{
-          position: 'fixed',
+          position: 'absolute',
           top: -200,
           left: '50%',
           transform: 'translateX(-50%)',
@@ -58,7 +58,7 @@ export default function ArcadePage() {
         }}
       />
 
-      <div style={{ position: 'relative', zIndex: 2, maxWidth: 1100, margin: '0 auto', padding: '40px 24px 80px' }}>
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: 1100, margin: '0 auto', padding: '24px 24px 60px' }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 48 }}>
           {/* Pre-label */}
