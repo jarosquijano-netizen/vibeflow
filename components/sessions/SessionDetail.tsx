@@ -83,16 +83,18 @@ function formatFullDate(dateStr: string): string {
 /* ------------------------------------------------------------------ */
 /*  Shared label style                                                  */
 /* ------------------------------------------------------------------ */
-const sectionLabel: React.CSSProperties = {
-  fontSize: 10,
-  textTransform: 'uppercase',
-  fontWeight: 700,
-  color: '#94A3B8',
-  letterSpacing: '0.06em',
-  marginBottom: 8,
-  fontFamily: 'var(--font-dm-sans)',
-  display: 'block',
-};
+function sectionLabel(cyber: boolean): React.CSSProperties {
+  return {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    fontWeight: 700,
+    color: cyber ? '#6B7280' : '#94A3B8',
+    letterSpacing: cyber ? '0.15em' : '0.06em',
+    marginBottom: 8,
+    fontFamily: cyber ? "'JetBrains Mono', monospace" : 'var(--font-dm-sans)',
+    display: 'block',
+  };
+}
 
 /* ------------------------------------------------------------------ */
 /*  SessionDetail                                                       */
@@ -144,6 +146,25 @@ function SessionDetailInner({
   const isClosed = session.status === 'CLOSED';
   const { theme } = useTheme();
   const isCyber = theme === 'cyber';
+
+  /* ── Theme colors ── */
+  const C = {
+    panelBg:      isCyber ? '#111118'  : '#FFFFFF',
+    topBarBg:     isCyber ? '#16161E'  : '#FFFFFF',
+    border:       isCyber ? '#3B4B3D'  : '#E2E8F0',
+    borderSubtle: isCyber ? '#2A2A3E'  : '#F1F5F9',
+    title:        isCyber ? '#F0FFF4'  : '#0F172A',
+    body:         isCyber ? '#B9CBB9'  : '#0F172A',
+    bodyDim:      isCyber ? '#4B5563'  : '#475569',
+    meta:         isCyber ? '#6B7280'  : '#94A3B8',
+    inputBg:      isCyber ? '#0E0E16'  : '#F1F5F9',
+    inputBgFocus: isCyber ? '#0A0A12'  : '#FFFFFF',
+    cardBg:       isCyber ? '#16161E'  : '#F8FAFC',
+    cardBorder:   isCyber ? '#3B4B3D'  : '#E2E8F0',
+    chipBg:       isCyber ? '#1A1A28'  : '#FFFFFF',
+    accent:       isCyber ? '#00D4FF'  : '#2563EB',
+    label:        isCyber ? '#6B7280'  : '#94A3B8',
+  };
 
   /* ── Local state ── */
   const [localTitle, setLocalTitle] = useState(session.title);
@@ -235,7 +256,7 @@ function SessionDetailInner({
   const saveMsgCfg = SAVE_MSG[savedMsgType];
 
   return (
-    <div style={{ flex: 1, overflowY: 'auto', background: '#FFFFFF', position: 'relative' }}>
+    <div style={{ flex: 1, overflowY: 'auto', background: C.panelBg, position: 'relative' }}>
 
       {/* ── Saved indicator ── */}
       <div
@@ -282,7 +303,8 @@ function SessionDetailInner({
       <div
         style={{
           padding: '24px 24px 16px',
-          borderBottom: '1px solid #F1F5F9',
+          background: C.topBarBg,
+          borderBottom: `1px solid ${C.borderSubtle}`,
         }}
       >
         {/* Title row + Close/Reopen button */}
@@ -297,11 +319,11 @@ function SessionDetailInner({
               flex: 1,
               fontSize: 20,
               fontWeight: 700,
-              color: '#0F172A',
+              color: C.title,
               border: 'none',
               outline: 'none',
               background: 'transparent',
-              fontFamily: 'var(--font-dm-sans)',
+              fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
               padding: 0,
               cursor: isClosed ? 'default' : 'text',
             }}
@@ -318,11 +340,11 @@ function SessionDetailInner({
                   height: 28,
                   paddingLeft: 12,
                   paddingRight: 12,
-                  background: '#F8FAFC',
-                  border: '1px solid #E2E8F0',
-                  color: '#94A3B8',
+                  background: C.cardBg,
+                  border: `1px solid ${C.border}`,
+                  color: C.meta,
                   fontSize: 12,
-                  fontFamily: 'var(--font-dm-sans)',
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                 }}
               >
                 ● Closed
@@ -332,12 +354,12 @@ function SessionDetailInner({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#2563EB',
+                  color: C.accent,
                   fontSize: 12,
                   cursor: 'pointer',
                   textDecoration: 'underline',
                   padding: 0,
-                  fontFamily: 'var(--font-dm-sans)',
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                 }}
               >
                 Reopen
@@ -355,9 +377,9 @@ function SessionDetailInner({
                 height: 28,
                 paddingLeft: 12,
                 paddingRight: 12,
-                background: closeHovered ? '#FEF2F2' : '#FFFFFF',
-                border: `1px solid ${closeHovered ? '#DC2626' : '#E2E8F0'}`,
-                color: closeHovered ? '#DC2626' : '#475569',
+                background: closeHovered ? (isCyber ? 'rgba(220,38,38,0.1)' : '#FEF2F2') : C.panelBg,
+                border: `1px solid ${closeHovered ? '#DC2626' : C.border}`,
+                color: closeHovered ? '#DC2626' : C.bodyDim,
                 fontSize: 12,
                 cursor: 'pointer',
                 borderRadius: 0,
@@ -382,7 +404,7 @@ function SessionDetailInner({
           }}
         >
           {/* Date */}
-          <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>
+          <span style={{ fontSize: 12, color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)' }}>
             {formatFullDate(session.date)}
           </span>
 
@@ -409,26 +431,27 @@ function SessionDetailInner({
                 style={{
                   width: 60,
                   height: 24,
-                  border: '1px solid #E2E8F0',
-                  background: '#F1F5F9',
+                  border: `1px solid ${C.border}`,
+                  background: C.inputBg,
+                  color: C.body,
                   fontSize: 12,
                   paddingLeft: 8,
                   outline: 'none',
                   borderRadius: 0,
-                  fontFamily: 'var(--font-dm-sans)',
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                 }}
               />
-              <span style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>hours</span>
+              <span style={{ fontSize: 12, color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)' }}>hours</span>
             </span>
           ) : (
             <span
               onClick={() => { if (!isClosed) setEditingDuration(true); }}
               style={{
                 fontSize: 12,
-                color: '#94A3B8',
+                color: C.meta,
                 cursor: isClosed ? 'default' : 'text',
-                fontFamily: 'var(--font-dm-sans)',
-                borderBottom: isClosed ? 'none' : '1px dashed #E2E8F0',
+                fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                borderBottom: isClosed ? 'none' : `1px dashed ${C.border}`,
               }}
             >
               {localDuration} hours
@@ -441,20 +464,20 @@ function SessionDetailInner({
       {isClosed && (
         <div
           style={{
-            background: '#F8FAFC',
-            borderBottom: '1px solid #E2E8F0',
+            background: C.cardBg,
+            borderBottom: `1px solid ${C.border}`,
             padding: '8px 24px',
           }}
         >
           <span
             style={{
               fontSize: 12,
-              color: '#94A3B8',
-              fontStyle: 'italic',
-              fontFamily: 'var(--font-dm-sans)',
+              color: C.meta,
+              fontStyle: isCyber ? 'normal' : 'italic',
+              fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
             }}
           >
-            This session is closed. Reopen to make edits.
+            {isCyber ? '// SESSION CLOSED — reopen to edit' : 'This session is closed. Reopen to make edits.'}
           </span>
         </div>
       )}
@@ -464,7 +487,7 @@ function SessionDetailInner({
 
         {/* ── SESSION GOAL ── */}
         <div>
-          <span style={sectionLabel}>Session Goal</span>
+          <span style={sectionLabel(isCyber)}>{isCyber ? '// SESSION_GOAL' : 'Session Goal'}</span>
           <textarea
             value={localGoal}
             onChange={(e) => { if (!isClosed) setLocalGoal(e.target.value); }}
@@ -476,7 +499,7 @@ function SessionDetailInner({
               width: '100%',
               minHeight: 72,
               border: 'none',
-              borderLeft: '3px solid #E2E8F0',
+              borderLeft: `3px solid ${isCyber ? '#3B4B3D' : '#E2E8F0'}`,
               outline: 'none',
               resize: 'none',
               paddingLeft: 12,
@@ -484,9 +507,9 @@ function SessionDetailInner({
               paddingBottom: 4,
               paddingRight: 0,
               fontSize: 14,
-              color: isClosed ? '#475569' : '#0F172A',
+              color: isClosed ? C.bodyDim : C.body,
               lineHeight: 1.6,
-              fontFamily: 'var(--font-dm-sans)',
+              fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
               background: 'transparent',
               cursor: isClosed ? 'default' : 'text',
             }}
@@ -503,7 +526,7 @@ function SessionDetailInner({
               marginBottom: 8,
             }}
           >
-            <span style={{ ...sectionLabel, margin: 0 }}>Linked Features</span>
+            <span style={{ ...sectionLabel(isCyber), margin: 0 }}>{isCyber ? '// LINKED_FEATURES' : 'Linked Features'}</span>
             <button
               onClick={() => setFeaturesOpen((v) => !v)}
               style={{
@@ -513,7 +536,7 @@ function SessionDetailInner({
                 padding: 0,
                 display: 'flex',
                 alignItems: 'center',
-                color: '#94A3B8',
+                color: C.meta,
               }}
             >
               {featuresOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -532,19 +555,22 @@ function SessionDetailInner({
                     style={{
                       width: 140,
                       flexShrink: 0,
-                      border: '1px solid #E2E8F0',
+                      border: `1px solid ${C.cardBorder}`,
+                      background: isCyber ? C.cardBg : 'transparent',
                       padding: 8,
                     }}
                   >
                     <span
                       style={{
                         fontSize: 10,
-                        color: statusCfg.color,
-                        background: statusCfg.bg,
+                        color: isCyber ? statusCfg.color : statusCfg.color,
+                        background: isCyber ? `${statusCfg.color}1A` : statusCfg.bg,
+                        border: isCyber ? `1px solid ${statusCfg.color}44` : 'none',
                         padding: '1px 6px',
-                        fontFamily: 'var(--font-dm-sans)',
+                        fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                         fontWeight: 600,
                         textTransform: 'uppercase',
+                        borderRadius: isCyber ? 3 : 0,
                       }}
                     >
                       {feat.status}
@@ -553,14 +579,14 @@ function SessionDetailInner({
                       style={{
                         fontSize: 12,
                         fontWeight: 600,
-                        color: '#0F172A',
+                        color: C.body,
                         marginTop: 4,
                         lineHeight: 1.4,
                         display: '-webkit-box',
                         WebkitLineClamp: 2,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
-                        fontFamily: 'var(--font-dm-sans)',
+                        fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                       }}
                     >
                       {feat.title}
@@ -574,7 +600,7 @@ function SessionDetailInner({
                           padding: '1px 6px',
                           marginTop: 4,
                           display: 'inline-block',
-                          fontFamily: 'var(--font-dm-sans)',
+                          fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                           fontWeight: 600,
                         }}
                       >
@@ -591,15 +617,15 @@ function SessionDetailInner({
                   style={{
                     width: 120,
                     flexShrink: 0,
-                    border: '1px dashed #E2E8F0',
+                    border: `1px dashed ${C.border}`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 12,
-                    color: '#94A3B8',
+                    color: isCyber ? '#00FF88' : C.meta,
                     cursor: 'pointer',
                     padding: '8px 12px',
-                    fontFamily: 'var(--font-dm-sans)',
+                    fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                   }}
                 >
                   + Link feature
@@ -611,7 +637,7 @@ function SessionDetailInner({
 
         {/* ── PROMPTS USED ── */}
         <div>
-          <span style={sectionLabel}>Prompts Used</span>
+          <span style={sectionLabel(isCyber)}>{isCyber ? '// PROMPTS_USED' : 'Prompts Used'}</span>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
             {session.promptIds.map((pid) => {
               const prompt = PROMPTS_LOOKUP[pid];
@@ -624,9 +650,9 @@ function SessionDetailInner({
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    border: '1px solid #E2E8F0',
+                    border: `1px solid ${C.cardBorder}`,
                     padding: '6px 8px',
-                    background: '#FFFFFF',
+                    background: C.chipBg,
                     flexShrink: 0,
                   }}
                 >
@@ -642,19 +668,19 @@ function SessionDetailInner({
                   <span
                     style={{
                       fontSize: 12,
-                      color: '#0F172A',
+                      color: C.body,
                       maxWidth: 160,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
-                      fontFamily: 'var(--font-dm-sans)',
+                      fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                     }}
                   >
                     {prompt.title.slice(0, 20)}{prompt.title.length > 20 ? '...' : ''}
                   </span>
                   <span style={{ fontSize: 10, flexShrink: 0 }}>
                     {[1, 2, 3, 4, 5].map((s) => (
-                      <span key={s} style={{ color: s <= prompt.quality ? '#D97706' : '#E2E8F0' }}>★</span>
+                      <span key={s} style={{ color: s <= prompt.quality ? '#D97706' : C.border }}>★</span>
                     ))}
                   </span>
                 </div>
@@ -665,15 +691,15 @@ function SessionDetailInner({
             {!isClosed && (
               <div
                 style={{
-                  border: '1px dashed #E2E8F0',
+                  border: `1px dashed ${C.border}`,
                   padding: '6px 12px',
                   fontSize: 12,
-                  color: '#94A3B8',
+                  color: isCyber ? '#00FF88' : C.meta,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   flexShrink: 0,
-                  fontFamily: 'var(--font-dm-sans)',
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                 }}
               >
                 + Add prompt
@@ -684,7 +710,7 @@ function SessionDetailInner({
 
         {/* ── PROTOTYPE OUTPUT ── */}
         <div>
-          <span style={sectionLabel}>Prototype Output</span>
+          <span style={sectionLabel(isCyber)}>{isCyber ? '// PROTOTYPE_OUTPUT' : 'Prototype Output'}</span>
           <div style={{ display: 'flex', gap: 8 }}>
             <input
               value={localProtoUrl}
@@ -695,19 +721,19 @@ function SessionDetailInner({
               style={{
                 flex: 1,
                 height: 32,
-                border: '1px solid #E2E8F0',
-                background: isClosed ? 'transparent' : '#F1F5F9',
+                border: `1px solid ${C.border}`,
+                background: isClosed ? 'transparent' : C.inputBg,
                 paddingLeft: 12,
                 paddingRight: 12,
                 fontSize: 13,
                 outline: 'none',
                 borderRadius: 0,
-                fontFamily: 'var(--font-dm-sans)',
-                color: '#0F172A',
+                fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                color: C.body,
                 cursor: isClosed ? 'default' : 'text',
               }}
-              onFocus={(e) => { if (!isClosed) e.currentTarget.style.borderColor = '#2563EB'; }}
-              onBlurCapture={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; }}
+              onFocus={(e) => { if (!isClosed) e.currentTarget.style.borderColor = C.accent; }}
+              onBlurCapture={(e) => { e.currentTarget.style.borderColor = C.border; }}
             />
             <button
               disabled={!localProtoUrl}
@@ -716,13 +742,13 @@ function SessionDetailInner({
                 height: 32,
                 paddingLeft: 12,
                 paddingRight: 12,
-                background: '#FFFFFF',
-                border: '1px solid #E2E8F0',
-                color: localProtoUrl ? '#0F172A' : '#94A3B8',
+                background: C.cardBg,
+                border: `1px solid ${C.border}`,
+                color: localProtoUrl ? C.body : C.meta,
                 fontSize: 13,
                 cursor: localProtoUrl ? 'pointer' : 'not-allowed',
                 borderRadius: 0,
-                fontFamily: 'var(--font-dm-sans)',
+                fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                 flexShrink: 0,
               }}
             >
@@ -732,10 +758,10 @@ function SessionDetailInner({
 
           {/* Browser mockup */}
           {localProtoUrl && (
-            <div style={{ marginTop: 8, border: '1px solid #E2E8F0' }}>
+            <div style={{ marginTop: 8, border: `1px solid ${C.border}` }}>
               <div
                 style={{
-                  background: '#F1F5F9',
+                  background: C.inputBg,
                   height: 28,
                   paddingLeft: 12,
                   paddingRight: 12,
@@ -752,11 +778,11 @@ function SessionDetailInner({
                 <span
                   style={{
                     fontSize: 11,
-                    color: '#94A3B8',
+                    color: isCyber ? '#00D4FF' : '#94A3B8',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                    fontFamily: 'var(--font-dm-sans)',
+                    fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                   }}
                 >
                   {localProtoUrl}
@@ -765,13 +791,13 @@ function SessionDetailInner({
               <div
                 style={{
                   height: 80,
-                  background: '#F8FAFC',
+                  background: C.cardBg,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}
               >
-                <span style={{ fontSize: 11, color: '#CBD5E1', fontFamily: 'var(--font-dm-sans)' }}>
+                <span style={{ fontSize: 11, color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)' }}>
                   Preview not available
                 </span>
               </div>
@@ -781,7 +807,7 @@ function SessionDetailInner({
 
         {/* ── SESSION NOTES ── */}
         <div>
-          <span style={sectionLabel}>Session Notes</span>
+          <span style={sectionLabel(isCyber)}>{isCyber ? '// SESSION_NOTES' : 'Session Notes'}</span>
           <div className="notes-grid">
             {/* What worked */}
             <div>
@@ -791,25 +817,25 @@ function SessionDetailInner({
                   fontSize: 10,
                   textTransform: 'uppercase',
                   fontWeight: 700,
-                  color: '#16A34A',
-                  letterSpacing: '0.06em',
+                  color: isCyber ? '#00FF88' : '#16A34A',
+                  letterSpacing: isCyber ? '0.15em' : '0.06em',
                   marginBottom: 6,
-                  fontFamily: 'var(--font-dm-sans)',
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                 }}
               >
-                What worked
+                {isCyber ? '// WHAT_WORKED' : 'What worked'}
               </span>
               <textarea
                 value={localWorked}
                 onChange={(e) => { if (!isClosed) setLocalWorked(e.target.value); }}
                 onBlur={() => { if (!isClosed) save({ notes: { worked: localWorked, improve: localImprove } }); }}
                 readOnly={isClosed}
-                placeholder="What went well..."
+                placeholder={isCyber ? '// what went well...' : 'What went well...'}
                 style={{
                   width: '100%',
                   minHeight: 100,
                   border: 'none',
-                  borderLeft: '3px solid #16A34A',
+                  borderLeft: `3px solid ${isCyber ? '#00FF88' : '#16A34A'}`,
                   outline: 'none',
                   resize: 'none',
                   paddingLeft: 12,
@@ -817,9 +843,9 @@ function SessionDetailInner({
                   paddingBottom: 4,
                   paddingRight: 0,
                   fontSize: 13,
-                  color: isClosed ? '#475569' : '#0F172A',
+                  color: isClosed ? C.bodyDim : C.body,
                   lineHeight: 1.6,
-                  fontFamily: 'var(--font-dm-sans)',
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                   background: 'transparent',
                   cursor: isClosed ? 'default' : 'text',
                 }}
@@ -834,25 +860,25 @@ function SessionDetailInner({
                   fontSize: 10,
                   textTransform: 'uppercase',
                   fontWeight: 700,
-                  color: '#D97706',
-                  letterSpacing: '0.06em',
+                  color: isCyber ? '#FFB800' : '#D97706',
+                  letterSpacing: isCyber ? '0.15em' : '0.06em',
                   marginBottom: 6,
-                  fontFamily: 'var(--font-dm-sans)',
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                 }}
               >
-                What to improve
+                {isCyber ? '// WHAT_TO_IMPROVE' : 'What to improve'}
               </span>
               <textarea
                 value={localImprove}
                 onChange={(e) => { if (!isClosed) setLocalImprove(e.target.value); }}
                 onBlur={() => { if (!isClosed) save({ notes: { worked: localWorked, improve: localImprove } }); }}
                 readOnly={isClosed}
-                placeholder="What to do better next time..."
+                placeholder={isCyber ? '// what to do better next time...' : 'What to do better next time...'}
                 style={{
                   width: '100%',
                   minHeight: 100,
                   border: 'none',
-                  borderLeft: '3px solid #D97706',
+                  borderLeft: `3px solid ${isCyber ? '#FFB800' : '#D97706'}`,
                   outline: 'none',
                   resize: 'none',
                   paddingLeft: 12,
@@ -860,9 +886,9 @@ function SessionDetailInner({
                   paddingBottom: 4,
                   paddingRight: 0,
                   fontSize: 13,
-                  color: isClosed ? '#475569' : '#0F172A',
+                  color: isClosed ? C.bodyDim : C.body,
                   lineHeight: 1.6,
-                  fontFamily: 'var(--font-dm-sans)',
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                   background: 'transparent',
                   cursor: isClosed ? 'default' : 'text',
                 }}
@@ -978,7 +1004,7 @@ function SessionDetailInner({
           ) : (
             <>
               {/* Default section header */}
-              <span style={sectionLabel}>Backlog Items</span>
+              <span style={sectionLabel(isCyber)}>Backlog Items</span>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ height: 28, borderBottom: '1px solid #E2E8F0' }}>

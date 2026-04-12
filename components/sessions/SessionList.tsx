@@ -306,7 +306,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                         fontFamily: "'Space Grotesk', sans-serif",
                         fontSize: 14,
                         fontWeight: 700,
-                        color: isOpen ? '#F0FFF4' : '#9CA3AF',
+                        color: isOpen ? '#F0FFF4' : '#B9CBB9',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
@@ -328,7 +328,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                         style={{
                           fontFamily: "'JetBrains Mono', monospace",
                           fontSize: 10,
-                          color: isOpen ? '#9CA3AF' : '#6B7280',
+                          color: isOpen ? '#B9CBB9' : '#6B7280',
                         }}
                       >
                         {formatShortDate(session.date)} · {session.duration}h
