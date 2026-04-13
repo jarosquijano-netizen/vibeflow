@@ -18,6 +18,10 @@ import { useTheme } from '@/components/providers/ThemeProvider';
 import FeatureCard, { STATUS_CONFIG } from './FeatureCard';
 import FeatureColumn from './FeatureColumn';
 import FeatureDetailPanel from './FeatureDetailPanel';
+import FeatureCompletionCelebration from './FeatureCompletionCelebration';
+import { getFeatureRewards, type FeatureReward, type TShirtSize } from '@/lib/feature-rewards';
+import { dispatchXPEvent } from '@/lib/xp-engine';
+import { vibeToast } from '@/components/polish/toasts';
 
 /* ------------------------------------------------------------------ */
 /*  Sample data                                                         */
@@ -70,6 +74,8 @@ export default function FeatureBoard() {
   const [ownerFilter, setOwnerFilter] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
   const [selectedFeatureId, setSelectedFeatureId] = useState<string | null>(null);
+  const [celebrationFeature, setCelebrationFeature] = useState<Feature | null>(null);
+  const [celebrationReward, setCelebrationReward] = useState<FeatureReward | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -111,10 +117,16 @@ export default function FeatureBoard() {
       const activeFeatureId = String(active.id);
       const targetId = String(over.id);
 
+      const dragged = features.find((f) => f.id === activeFeatureId);
+
       if (STATUS_ORDER.includes(targetId as typeof STATUS_ORDER[number])) {
+        const newStatus = targetId as Feature['status'];
         setFeatures((prev) =>
-          prev.map((f) => f.id === activeFeatureId ? { ...f, status: targetId as Feature['status'] } : f)
+          prev.map((f) => f.id === activeFeatureId ? { ...f, status: newStatus } : f)
         );
+        if (dragged && newStatus === 'DONE' && dragged.status !== 'DONE') {
+          triggerCelebration(dragged, newStatus);
+        }
         return;
       }
 
@@ -129,9 +141,30 @@ export default function FeatureBoard() {
           f.id === activeFeatureId ? { ...f, status: overFeature.status } : f
         );
       });
+      if (dragged && overFeature.status === 'DONE' && dragged.status !== 'DONE') {
+        triggerCelebration(dragged, overFeature.status);
+      }
     },
     [features]
   );
+
+  function triggerCelebration(feature: Feature, _newStatus: string) {
+    const rewards = getFeatureRewards();
+    const size = (feature.size ?? 'M') as TShirtSize;
+    const reward = rewards[size] ?? rewards['M'];
+    dispatchXPEvent({
+      id: Date.now().toString(),
+      label: `Feature shipped: ${feature.title}`,
+      amount: reward.xp,
+      timestamp: Date.now(),
+    });
+    if (isCyber) {
+      setCelebrationFeature({ ...feature, status: 'DONE' });
+      setCelebrationReward(reward);
+    } else {
+      vibeToast.success(`✓ ${feature.title} shipped! +${reward.xp} XP`);
+    }
+  }
 
   /* ── Cyber toolbar button base ── */
   const cyberBtn: React.CSSProperties = {
@@ -528,6 +561,16 @@ export default function FeatureBoard() {
         feature={selectedFeature}
         onClose={() => setSelectedFeatureId(null)}
         onSizeAccepted={handleSizeAccepted}
+      />
+
+      {/* Feature completion celebration overlay */}
+      <FeatureCompletionCelebration
+        feature={celebrationFeature}
+        reward={celebrationReward}
+        onDismiss={() => {
+          setCelebrationFeature(null);
+          setCelebrationReward(null);
+        }}
       />
     </div>
   );

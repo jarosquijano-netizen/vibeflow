@@ -295,3 +295,28 @@ body {
     box-shadow: 0 0 20px rgba(0, 255, 136, 0.6);
   }
 }
+
+/* ------------------------------------------------------------------ */
+/*  Feature Completion Celebration                                       */
+/* ------------------------------------------------------------------ */
+@keyframes particle-burst {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes xp-pop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes badge-pulse {
+  0%, 100% { box-shadow: 0 0 60px var(--badge-shadow); }
+  50%       { box-shadow: 0 0 90px var(--badge-shadow); }
+}
