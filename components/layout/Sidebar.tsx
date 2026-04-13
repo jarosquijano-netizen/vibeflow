@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Kanban,
-  List,
+  Lightbulb,
   BookMarked,
   Zap,
   CalendarRange,
@@ -28,7 +28,7 @@ const NAV_GROUPS = [
     label: 'Workspace',
     items: [
       { label: 'Feature Board', href: '/dashboard/features', icon: Kanban },
-      { label: 'Backlog', href: '/dashboard/backlog', icon: List },
+      { label: 'Idea Room', href: '/dashboard/idea-room', icon: Lightbulb },
       { label: 'Prompt Library', href: '/dashboard/prompts', icon: BookMarked },
       { label: 'Vibe Sessions', href: '/dashboard/sessions', icon: Zap },
     ],
@@ -454,7 +454,7 @@ export default function Sidebar() {
                 <CyberNavItem
                   key={item.href}
                   href={item.href}
-                  label={item.label}
+                  label={item.label.toUpperCase().replace(/ /g, '_')}
                   icon={item.icon}
                   isActive={pathname === item.href || pathname.startsWith(item.href + '/')}
                   collapsed={collapsed}
