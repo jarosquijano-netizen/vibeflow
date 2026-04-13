@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -22,6 +22,7 @@ import FeatureCompletionCelebration from './FeatureCompletionCelebration';
 import { getFeatureRewards, type FeatureReward, type TShirtSize } from '@/lib/feature-rewards';
 import { dispatchXPEvent } from '@/lib/xp-engine';
 import { vibeToast } from '@/components/polish/toasts';
+import { getPromotedFeatures, updateFeatureStatus } from '@/lib/feature-store';
 
 /* ------------------------------------------------------------------ */
 /*  Sample data                                                         */
@@ -80,6 +81,57 @@ export default function FeatureBoard() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
+
+  /* ── Merge promoted features on mount + storage events ── */
+  function mergeWithPromoted(current: Feature[], promoted: Feature[]): Feature[] {
+    const ids = new Set(current.map((f) => f.id));
+    const newOnes = promoted.filter((f) => !ids.has(f.id));
+    return newOnes.length > 0 ? [...newOnes, ...current] : current;
+  }
+
+  useEffect(() => {
+    const promoted = getPromotedFeatures();
+    if (promoted.length > 0) {
+      setFeatures((prev) => {
+        const merged = mergeWithPromoted(prev, promoted);
+        if (merged.length > prev.length) {
+          const added = merged.length - prev.length;
+          vibeToast.success(`⚡ ${added} idea${added !== 1 ? 's' : ''} promoted to board`);
+        }
+        return merged;
+      });
+    }
+
+    function handleStorage(e: StorageEvent) {
+      if (e.key === 'vibeflow-promoted-features') {
+        const promoted = getPromotedFeatures();
+        setFeatures((prev) => {
+          const merged = mergeWithPromoted(prev, promoted);
+          if (merged.length > prev.length) {
+            vibeToast.success('⚡ New idea promoted to board');
+          }
+          return merged;
+        });
+      }
+    }
+
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  /* ── Listen for feature status updates from Session close ── */
+  useEffect(() => {
+    function handleStatusUpdate(e: CustomEvent) {
+      const { featureId, newStatus } = e.detail as { featureId: string; newStatus: string };
+      setFeatures((prev) =>
+        prev.map((f) => (f.id === featureId ? { ...f, status: newStatus as Feature['status'] } : f))
+      );
+      updateFeatureStatus(featureId, newStatus);
+    }
+
+    window.addEventListener('feature-status-updated', handleStatusUpdate as EventListener);
+    return () => window.removeEventListener('feature-status-updated', handleStatusUpdate as EventListener);
+  }, []);
 
   const activeFeature = features.find((f) => f.id === activeId) ?? null;
   const selectedFeature = features.find((f) => f.id === selectedFeatureId) ?? null;

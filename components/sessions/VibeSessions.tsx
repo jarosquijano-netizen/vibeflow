@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { VibeSession } from '@/types';
+import { getActiveSessions, saveActiveSession } from '@/lib/feature-store';
 import SessionList from './SessionList';
 import SessionDetail from './SessionDetail';
 
@@ -136,13 +138,42 @@ const SAMPLE_SESSIONS: VibeSession[] = [
 /*  VibeSessions                                                        */
 /* ------------------------------------------------------------------ */
 export default function VibeSessions() {
+  const searchParams = useSearchParams();
+  const sessionParam = searchParams.get('session');
+
   const [sessions, setSessions] = useState<VibeSession[]>(SAMPLE_SESSIONS);
   const [selectedId, setSelectedId] = useState<string | null>('s1');
+
+  /* Merge localStorage sessions on mount and handle URL param */
+  useEffect(() => {
+    const active = getActiveSessions();
+    if (active.length > 0) {
+      setSessions((prev) => {
+        const existingIds = new Set(prev.map((s) => s.id));
+        const newOnes = active.filter((s) => !existingIds.has(s.id));
+        return newOnes.length > 0 ? [...newOnes, ...prev] : prev;
+      });
+    }
+
+    if (sessionParam) {
+      // Find in active sessions or sample
+      const found = active.find((s) => s.id === sessionParam);
+      if (found) {
+        setSessions((prev) => {
+          const existingIds = new Set(prev.map((s) => s.id));
+          return existingIds.has(found.id) ? prev : [found, ...prev];
+        });
+        setSelectedId(sessionParam);
+      }
+    }
+  }, [sessionParam]);
 
   const selectedSession = sessions.find((s) => s.id === selectedId) ?? null;
 
   function handleUpdate(updated: VibeSession) {
     setSessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    // Persist if it's an active session
+    saveActiveSession(updated);
   }
 
   function handleNew() {
@@ -163,6 +194,7 @@ export default function VibeSessions() {
     };
     setSessions((prev) => [newSession, ...prev]);
     setSelectedId(newSession.id);
+    saveActiveSession(newSession);
   }
 
   return (

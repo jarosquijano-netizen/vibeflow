@@ -11,6 +11,7 @@ export interface Feature {
   aiSuggestedSize?: string;
   aiConfidence?: 'HIGH' | 'MEDIUM' | 'LOW';
   aiAccepted?: boolean;
+  sessionIds?: string[];
 }
 
 export interface Prompt {

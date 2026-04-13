@@ -2,10 +2,15 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Zap, CheckSquare } from 'lucide-react';
-import type { VibeSession, BacklogItem } from '@/types';
+import type { VibeSession, BacklogItem, Feature } from '@/types';
 import BacklogItemRow from './BacklogItemRow';
 import { vibeToast } from '@/components/polish/toasts';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { detectFeatureStatus, type DetectedStatus } from '@/lib/status-detector';
+import { getPromotedFeatures, updateFeatureStatus } from '@/lib/feature-store';
+import { getFeatureRewards, type FeatureReward, type TShirtSize } from '@/lib/feature-rewards';
+import FeatureCompletionCelebration from '../features/FeatureCompletionCelebration';
+import { dispatchXPEvent } from '@/lib/xp-engine';
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -183,6 +188,16 @@ function SessionDetailInner({
   const [savedMsgType, setSavedMsgType] = useState<SaveMsgType>('saved');
   const [syncedVisible, setSyncedVisible] = useState(false);
   const [closeHovered, setCloseHovered] = useState(false);
+  const [closeModal, setCloseModal] = useState<{
+    open: boolean;
+    featureId: string | null;
+    featureTitle: string;
+    featureSize: Feature['size'];
+    detected: DetectedStatus | null;
+    selectedStatus: string;
+  }>({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA' });
+  const [celebrationFeature, setCelebrationFeature] = useState<Feature | null>(null);
+  const [celebrationReward, setCelebrationReward] = useState<FeatureReward | null>(null);
 
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -254,6 +269,88 @@ function SessionDetailInner({
   }
 
   const saveMsgCfg = SAVE_MSG[savedMsgType];
+
+  /* ── Session status order for the advance modal ── */
+  const SESSION_STATUS_ORDER = ['IDEA', 'SCOPING', 'PROTOTYPING', 'BUILDING', 'DONE'] as const;
+
+  const MODAL_STATUS_COLORS: Record<string, { color: string; bg: string; cyberColor: string; cyberBg: string }> = {
+    IDEA:        { color: '#64748B', bg: '#F1F5F9', cyberColor: '#94A3B8', cyberBg: 'rgba(148,163,184,0.1)' },
+    SCOPING:     { color: '#7C3AED', bg: '#EDE9FE', cyberColor: '#BF00FF', cyberBg: 'rgba(191,0,255,0.1)' },
+    PROTOTYPING: { color: '#2563EB', bg: '#DBEAFE', cyberColor: '#00D4FF', cyberBg: 'rgba(0,212,255,0.1)' },
+    BUILDING:    { color: '#D97706', bg: '#FEF3C7', cyberColor: '#FFB800', cyberBg: 'rgba(255,184,0,0.1)' },
+    DONE:        { color: '#16A34A', bg: '#DCFCE7', cyberColor: '#00FF88', cyberBg: 'rgba(0,255,136,0.1)' },
+  };
+
+  const CONFIDENCE_COLORS = {
+    HIGH:   { color: '#16A34A', bg: '#DCFCE7',  cyber: '#00FF88' },
+    MEDIUM: { color: '#D97706', bg: '#FEF3C7',  cyber: '#FFB800' },
+    LOW:    { color: '#64748B', bg: '#F1F5F9',  cyber: '#6B7280' },
+  };
+
+  function handleCloseSession() {
+    const primaryFeatureId = session.linkedFeatureIds[0];
+    if (primaryFeatureId) {
+      const features = getPromotedFeatures();
+      const currentFeature = features.find((f) => f.id === primaryFeatureId);
+      const detected = detectFeatureStatus(session, currentFeature?.status ?? 'IDEA');
+      setCloseModal({
+        open: true,
+        featureId: primaryFeatureId,
+        featureTitle: currentFeature?.title ?? primaryFeatureId,
+        featureSize: currentFeature?.size ?? null,
+        detected,
+        selectedStatus: detected.status,
+      });
+    } else {
+      save({ status: 'CLOSED' }, 'closed');
+      vibeToast.info('Session closed');
+    }
+  }
+
+  function handleCloseAndAdvance() {
+    const { featureId, detected, selectedStatus, featureSize } = closeModal;
+    const sessionXP = Math.round(session.duration * 25);
+    const xpBonus = detected?.xpBonus ?? 0;
+
+    save({ status: 'CLOSED' }, 'closed');
+
+    if (featureId) {
+      updateFeatureStatus(featureId, selectedStatus);
+
+      window.dispatchEvent(
+        new CustomEvent('feature-status-updated', {
+          detail: { featureId, newStatus: selectedStatus },
+        })
+      );
+
+      dispatchXPEvent({ id: `session-close-${Date.now()}`, label: 'Session completed', amount: sessionXP, timestamp: Date.now() });
+      if (xpBonus > 0) {
+        dispatchXPEvent({ id: `status-advance-${Date.now()}`, label: `Feature advanced to ${selectedStatus}`, amount: xpBonus, timestamp: Date.now() });
+      }
+
+      if (selectedStatus === 'DONE') {
+        const features = getPromotedFeatures();
+        const feat = features.find((f) => f.id === featureId);
+        if (feat && isCyber) {
+          const rewards = getFeatureRewards();
+          const size = (featureSize ?? 'M') as TShirtSize;
+          const reward = rewards[size] ?? rewards['M'];
+          setCelebrationFeature({ ...feat, status: 'DONE' });
+          setCelebrationReward(reward);
+        }
+      }
+    }
+
+    setCloseModal({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA' });
+    vibeToast.success(`Session closed · Feature advanced to ${selectedStatus}`);
+    if (isCyber) vibeToast.ai(`✦ ${detected?.reason ?? 'Session complete'}`);
+  }
+
+  function handleCloseWithoutAdvancing() {
+    save({ status: 'CLOSED' }, 'closed');
+    setCloseModal({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA' });
+    vibeToast.info('Session closed');
+  }
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', background: C.panelBg, position: 'relative' }}>
@@ -367,7 +464,7 @@ function SessionDetailInner({
             </div>
           ) : (
             <button
-              onClick={() => { save({ status: 'CLOSED' }, 'closed'); vibeToast.info('Session closed'); }}
+              onClick={handleCloseSession}
               onMouseEnter={() => setCloseHovered(true)}
               onMouseLeave={() => setCloseHovered(false)}
               style={{
@@ -1258,6 +1355,282 @@ function SessionDetailInner({
           .notes-grid { grid-template-columns: 1fr; }
         }
       `}</style>
+
+      {/* ── STATUS ADVANCE MODAL ── */}
+      {closeModal.open && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: isCyber ? 'rgba(0,0,0,0.75)' : 'rgba(0,0,0,0.5)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            zIndex: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: 420,
+              background: isCyber ? '#1A1A28' : '#FFFFFF',
+              border: `1px solid ${isCyber ? '#3B4B3D' : '#E2E8F0'}`,
+              borderRadius: 8,
+              padding: 32,
+              boxShadow: isCyber
+                ? '0 0 40px rgba(0,255,136,0.1)'
+                : '0 20px 60px rgba(0,0,0,0.2)',
+            }}
+          >
+            {/* Modal header */}
+            <div style={{ marginBottom: 20 }}>
+              {isCyber ? (
+                <div style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 18, fontWeight: 900, color: '#00FF88' }}>
+                  // SESSION_COMPLETE
+                </div>
+              ) : (
+                <div style={{ fontSize: 18, fontWeight: 700, color: '#0F172A' }}>Session Complete</div>
+              )}
+            </div>
+
+            {/* AI detection card */}
+            {closeModal.detected && (
+              <div
+                style={{
+                  background: isCyber ? '#111118' : '#F8FAFC',
+                  border: `1px solid ${isCyber ? '#2A2A3E' : '#E2E8F0'}`,
+                  borderRadius: 6,
+                  padding: 16,
+                  marginBottom: 20,
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                    fontSize: 10,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    color: isCyber ? '#6B7280' : '#94A3B8',
+                    marginBottom: 10,
+                  }}
+                >
+                  {isCyber ? '// STATUS_DETECTED' : '🤖 AI Status Suggestion'}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  {/* Detected status badge */}
+                  {(() => {
+                    const sc = MODAL_STATUS_COLORS[closeModal.detected.status] ?? MODAL_STATUS_COLORS.IDEA;
+                    return (
+                      <span
+                        style={{
+                          fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: isCyber ? sc.cyberColor : sc.color,
+                          background: isCyber ? sc.cyberBg : sc.bg,
+                          border: isCyber ? `1px solid ${sc.cyberColor}44` : 'none',
+                          padding: '3px 10px',
+                          borderRadius: 4,
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        {closeModal.detected.status}
+                      </span>
+                    );
+                  })()}
+                  {/* Confidence */}
+                  {(() => {
+                    const cc = CONFIDENCE_COLORS[closeModal.detected.confidence];
+                    return (
+                      <span
+                        style={{
+                          fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                          fontSize: 10,
+                          color: isCyber ? cc.cyber : cc.color,
+                          background: isCyber ? `${cc.cyber}15` : cc.bg,
+                          padding: '2px 8px',
+                          borderRadius: 12,
+                        }}
+                      >
+                        {closeModal.detected.confidence}
+                      </span>
+                    );
+                  })()}
+                </div>
+
+                <div
+                  style={{
+                    fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                    fontSize: 12,
+                    color: isCyber ? '#6B7280' : '#64748B',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  {closeModal.detected.reason}
+                </div>
+              </div>
+            )}
+
+            {/* Move feature to label */}
+            <div
+              style={{
+                fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                fontSize: 11,
+                color: isCyber ? '#6B7280' : '#94A3B8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                marginBottom: 8,
+              }}
+            >
+              {isCyber ? '// MOVE_FEATURE_TO:' : 'Move feature to:'}
+            </div>
+
+            {/* Status selector chips */}
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+              {SESSION_STATUS_ORDER.map((status) => {
+                const sc = MODAL_STATUS_COLORS[status] ?? MODAL_STATUS_COLORS.IDEA;
+                const isSelected = closeModal.selectedStatus === status;
+                return (
+                  <button
+                    key={status}
+                    onClick={() => setCloseModal((m) => ({ ...m, selectedStatus: status }))}
+                    style={{
+                      fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                      fontSize: 11,
+                      fontWeight: isSelected ? 700 : 400,
+                      color: isSelected ? (isCyber ? sc.cyberColor : sc.color) : (isCyber ? '#6B7280' : '#94A3B8'),
+                      background: isSelected ? (isCyber ? sc.cyberBg : sc.bg) : 'transparent',
+                      border: isSelected
+                        ? `1px solid ${isCyber ? sc.cyberColor : sc.color}`
+                        : `1px solid ${isCyber ? '#3B4B3D' : '#E2E8F0'}`,
+                      borderRadius: 4,
+                      padding: '4px 10px',
+                      cursor: 'pointer',
+                      transition: 'all 100ms ease',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {status}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Size warning for DONE */}
+            {closeModal.selectedStatus === 'DONE' && !closeModal.featureSize && (
+              <div
+                style={{
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                  fontSize: 11,
+                  color: isCyber ? '#FFB800' : '#D97706',
+                  background: isCyber ? 'rgba(255,184,0,0.08)' : '#FEF3C7',
+                  border: `1px solid ${isCyber ? 'rgba(255,184,0,0.3)' : '#FDE68A'}`,
+                  borderRadius: 4,
+                  padding: '6px 10px',
+                  marginBottom: 16,
+                }}
+              >
+                ⚠ Set a T-shirt size on the feature for full XP rewards.
+              </div>
+            )}
+
+            {/* XP preview */}
+            {(() => {
+              const sessionXP = Math.round(session.duration * 25);
+              const xpBonus = closeModal.detected?.xpBonus ?? 0;
+              const total = sessionXP + xpBonus;
+              const accentColor = isCyber ? '#00FF88' : '#7C3AED';
+              return (
+                <div
+                  style={{
+                    background: isCyber ? '#0A0A0F' : '#F5F3FF',
+                    border: `1px solid ${isCyber ? '#3B4B3D' : '#DDD6FE'}`,
+                    borderRadius: 6,
+                    padding: '10px 14px',
+                    marginBottom: 20,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: accentColor,
+                      marginBottom: 4,
+                    }}
+                  >
+                    +{total} XP
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                      fontSize: 11,
+                      color: isCyber ? '#4B5563' : '#7C3AED',
+                    }}
+                  >
+                    Session: {sessionXP} + Status bonus: {xpBonus}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Footer */}
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={handleCloseAndAdvance}
+                style={{
+                  flex: 1,
+                  height: 40,
+                  background: isCyber ? '#00FF88' : '#2563EB',
+                  color: isCyber ? '#000000' : '#FFFFFF',
+                  border: 'none',
+                  borderRadius: 4,
+                  fontFamily: isCyber ? "'Space Grotesk', sans-serif" : 'var(--font-dm-sans)',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  cursor: 'pointer',
+                  transition: 'box-shadow 150ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.boxShadow = isCyber
+                    ? '0 0 16px rgba(0,255,136,0.4)'
+                    : '0 4px 12px rgba(37,99,235,0.3)';
+                }}
+                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                {isCyber ? 'CLOSE_AND_ADVANCE' : 'Close & Advance'}
+              </button>
+              <button
+                onClick={handleCloseWithoutAdvancing}
+                style={{
+                  height: 40,
+                  padding: '0 16px',
+                  background: 'none',
+                  border: `1px solid ${isCyber ? '#3B4B3D' : '#E2E8F0'}`,
+                  borderRadius: 4,
+                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                  fontSize: 12,
+                  color: isCyber ? '#6B7280' : '#64748B',
+                  cursor: 'pointer',
+                }}
+              >
+                {isCyber ? 'NO_ADVANCE' : 'Close Without Advancing'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Feature completion celebration */}
+      <FeatureCompletionCelebration
+        feature={celebrationFeature}
+        reward={celebrationReward}
+        onDismiss={() => { setCelebrationFeature(null); setCelebrationReward(null); }}
+      />
     </div>
   );
 }
