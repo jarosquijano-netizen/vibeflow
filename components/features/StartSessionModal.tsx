@@ -66,10 +66,13 @@ export default function StartSessionModal({ feature, onStart, onClose }: Props) 
 
   function handleConfirm() {
     if (!feature) return;
+    const now = new Date();
+    const sessionId = `session-${Date.now()}`;
+    const today = now.toISOString().slice(0, 10);
     const newSession: VibeSession = {
-      id: `session-${Date.now()}`,
-      title: `${feature.title} — ${new Date().toLocaleDateString()}`,
-      date: new Date().toISOString().slice(0, 10),
+      id: sessionId,
+      title: `${feature.title} — ${now.toLocaleDateString()}`,
+      date: today,
       duration,
       goal,
       status: 'OPEN',
@@ -79,6 +82,20 @@ export default function StartSessionModal({ feature, onStart, onClose }: Props) 
       notes: { worked: '', improve: '' },
       backlogItems: [],
       jiraSyncedIds: [],
+      totalMinutes: 0,
+      sessions: [
+        {
+          id: `day-${sessionId}-1`,
+          date: today,
+          startedAt: now.toISOString(),
+          minutesLogged: 0,
+          notesWorked: '',
+          notesToImprove: '',
+          xpEarned: 0,
+        },
+      ],
+      lastActiveAt: today,
+      autoStatusHistory: [],
     };
 
     saveActiveSession(newSession);

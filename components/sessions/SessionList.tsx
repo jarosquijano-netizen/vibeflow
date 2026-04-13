@@ -38,6 +38,34 @@ function getStatusDotColor(session: VibeSession): string {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Multi-day helpers                                                   */
+/* ------------------------------------------------------------------ */
+function getTotalHrs(session: VibeSession): string {
+  const mins = session.totalMinutes ?? session.duration * 60;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (m === 0) return `${h}`;
+  return `${h}.${Math.round(m / 6)}`;
+}
+
+function getDayCount(session: VibeSession): number {
+  return session.sessions?.length ?? 1;
+}
+
+function isPaused(session: VibeSession): boolean {
+  if (session.status !== 'OPEN') return false;
+  const today = new Date().toISOString().slice(0, 10);
+  const lastActive = session.lastActiveAt ?? session.date;
+  return lastActive.slice(0, 10) !== today;
+}
+
+function getDaysSince(dateStr: string): number {
+  const last = new Date(dateStr + 'T12:00:00');
+  const now = new Date();
+  return Math.floor((now.getTime() - last.getTime()) / 86400000);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Streak helpers                                                      */
 /* ------------------------------------------------------------------ */
 function getCalendarDays(sessions: VibeSession[], streak: number): boolean[] {
@@ -263,7 +291,11 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
               {items.map((session) => {
                 const isSelected = session.id === selectedId;
                 const isOpen = session.status === 'OPEN';
+                const paused = isPaused(session);
                 const xpEst = sessionXPEstimate(session);
+                const totalHrs = getTotalHrs(session);
+                const days = getDayCount(session);
+                const daysSince = paused ? getDaysSince(session.lastActiveAt ?? session.date) : 0;
 
                 return (
                   <div
@@ -275,7 +307,7 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                       background: isOpen
                         ? isSelected ? 'rgba(0,255,136,0.06)' : '#1F1F25'
                         : isSelected ? 'rgba(27,27,32,0.7)' : 'rgba(27,27,32,0.4)',
-                      borderLeft: `4px solid ${isOpen ? '#00FF88' : '#3B4B3D'}`,
+                      borderLeft: `4px solid ${paused ? '#D97706' : isOpen ? '#00FF88' : '#3B4B3D'}`,
                       opacity: isOpen ? 1 : 0.7,
                       transition: 'opacity 120ms ease, background 120ms ease',
                     }}
@@ -291,13 +323,17 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                       style={{
                         fontFamily: "'JetBrains Mono', monospace",
                         fontSize: 10,
-                        color: isOpen ? '#00FF88' : '#6B7280',
+                        color: paused ? '#D97706' : isOpen ? '#00FF88' : '#6B7280',
                         marginBottom: 4,
                         textTransform: 'uppercase',
                         letterSpacing: '0.06em',
                       }}
                     >
-                      {isOpen ? `IN_PROGRESS_${session.id.slice(-3)}` : `COMPLETED_${session.id.slice(-3)}`}
+                      {paused
+                        ? `PAUSED_${daysSince}D`
+                        : isOpen
+                        ? `IN_PROGRESS_${session.id.slice(-3)}`
+                        : `COMPLETED_${session.id.slice(-3)}`}
                     </div>
 
                     {/* Title */}
@@ -328,10 +364,10 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                         style={{
                           fontFamily: "'JetBrains Mono', monospace",
                           fontSize: 10,
-                          color: isOpen ? '#B9CBB9' : '#6B7280',
+                          color: paused ? '#D97706' : isOpen ? '#B9CBB9' : '#6B7280',
                         }}
                       >
-                        {formatShortDate(session.date)} · {session.duration}h
+                        {formatShortDate(session.date)} · {totalHrs}H // {days}d
                       </span>
                       <span
                         style={{
@@ -447,7 +483,12 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
 
             {items.map((session) => {
               const isSelected = session.id === selectedId;
-              const dotColor = getStatusDotColor(session);
+              const paused = isPaused(session);
+              const dotColor = paused ? '#D97706' : getStatusDotColor(session);
+              const totalHrs = getTotalHrs(session);
+              const days = getDayCount(session);
+              const daysSince = paused ? getDaysSince(session.lastActiveAt ?? session.date) : 0;
+
               return (
                 <div
                   key={session.id}
@@ -497,22 +538,41 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                     >
                       {session.title}
                     </span>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        color: session.status === 'OPEN' ? '#16A34A' : '#94A3B8',
-                        background: session.status === 'OPEN' ? '#F0FDF4' : '#F8FAFC',
-                        border: `1px solid ${session.status === 'OPEN' ? '#BBF7D0' : '#E2E8F0'}`,
-                        padding: '2px 6px',
-                        marginLeft: 6,
-                        flexShrink: 0,
-                        fontFamily: 'var(--font-dm-sans)',
-                        fontWeight: 500,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {session.status === 'OPEN' ? '● Open' : '● Closed'}
-                    </span>
+                    {paused ? (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: '#D97706',
+                          background: '#FFFBEB',
+                          border: '1px solid #FDE68A',
+                          padding: '2px 6px',
+                          marginLeft: 6,
+                          flexShrink: 0,
+                          fontFamily: 'var(--font-dm-sans)',
+                          fontWeight: 500,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        ● Paused
+                      </span>
+                    ) : (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: session.status === 'OPEN' ? '#16A34A' : '#94A3B8',
+                          background: session.status === 'OPEN' ? '#F0FDF4' : '#F8FAFC',
+                          border: `1px solid ${session.status === 'OPEN' ? '#BBF7D0' : '#E2E8F0'}`,
+                          padding: '2px 6px',
+                          marginLeft: 6,
+                          flexShrink: 0,
+                          fontFamily: 'var(--font-dm-sans)',
+                          fontWeight: 500,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {session.status === 'OPEN' ? '● Open' : '● Closed'}
+                      </span>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', gap: 12, marginTop: 2 }}>
@@ -520,8 +580,13 @@ export default function SessionList({ sessions, selectedId, onSelect, onNew }: S
                       {formatShortDate(session.date)}
                     </span>
                     <span style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>
-                      {session.duration}h
+                      {totalHrs}h total · {days} day{days !== 1 ? 's' : ''}
                     </span>
+                    {paused && (
+                      <span style={{ fontSize: 11, color: '#D97706', fontFamily: 'var(--font-dm-sans)' }}>
+                        Last active {daysSince}d ago
+                      </span>
+                    )}
                   </div>
 
                   <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>

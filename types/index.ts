@@ -33,6 +33,26 @@ export interface BacklogItem {
   jiraId?: string;
 }
 
+export interface SessionDay {
+  id: string;
+  date: string;
+  startedAt: string;
+  endedAt?: string;
+  minutesLogged: number;
+  notesWorked: string;
+  notesToImprove: string;
+  xpEarned: number;
+}
+
+export interface AutoStatusChange {
+  id: string;
+  fromStatus: string;
+  toStatus: string;
+  trigger: string;
+  timestamp: string;
+  automatic: boolean;
+}
+
 export interface VibeSession {
   id: string;
   title: string;
@@ -49,4 +69,8 @@ export interface VibeSession {
   };
   backlogItems: BacklogItem[];
   jiraSyncedIds: string[];
+  totalMinutes: number;
+  sessions: SessionDay[];
+  lastActiveAt: string;
+  autoStatusHistory: AutoStatusChange[];
 }

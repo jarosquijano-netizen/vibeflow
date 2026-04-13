@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Zap, CheckSquare } from 'lucide-react';
-import type { VibeSession, BacklogItem, Feature } from '@/types';
+import type { VibeSession, BacklogItem, Feature, SessionDay } from '@/types';
 import BacklogItemRow from './BacklogItemRow';
 import { vibeToast } from '@/components/polish/toasts';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -171,14 +171,24 @@ function SessionDetailInner({
     label:        isCyber ? '#6B7280'  : '#94A3B8',
   };
 
+  /* ── Derive current SessionDay ── */
+  const currentDay = session.sessions?.length
+    ? session.sessions[session.sessions.length - 1]
+    : null;
+
   /* ── Local state ── */
   const [localTitle, setLocalTitle] = useState(session.title);
   const [localGoal, setLocalGoal] = useState(session.goal);
   const [localDuration, setLocalDuration] = useState(String(session.duration));
   const [editingDuration, setEditingDuration] = useState(false);
   const [localProtoUrl, setLocalProtoUrl] = useState(session.prototypeUrl ?? '');
-  const [localWorked, setLocalWorked] = useState(session.notes.worked);
-  const [localImprove, setLocalImprove] = useState(session.notes.improve);
+  /* Notes: if OPEN write to current SessionDay; if CLOSED show root summary */
+  const [localWorked, setLocalWorked] = useState(
+    !isClosed && currentDay ? currentDay.notesWorked : session.notes.worked
+  );
+  const [localImprove, setLocalImprove] = useState(
+    !isClosed && currentDay ? currentDay.notesToImprove : session.notes.improve
+  );
   const [backlogItems, setBacklogItems] = useState<BacklogItem[]>(session.backlogItems);
   const [jiraSyncedIds, setJiraSyncedIds] = useState<string[]>(session.jiraSyncedIds);
   const [featuresOpen, setFeaturesOpen] = useState(true);
@@ -198,9 +208,14 @@ function SessionDetailInner({
   }>({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA' });
   const [celebrationFeature, setCelebrationFeature] = useState<Feature | null>(null);
   const [celebrationReward, setCelebrationReward] = useState<FeatureReward | null>(null);
+  /* Multi-day state */
+  const [sessionTimer, setSessionTimer] = useState(0); // minutes since this component mounted
+  const [daysExpanded, setDaysExpanded] = useState(true);
+  const [statusHistoryOpen, setStatusHistoryOpen] = useState(false);
 
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const updateCurrentDayTimeRef = useRef<(ticks: number) => void>(() => {});
 
   useEffect(() => {
     return () => {
@@ -208,6 +223,31 @@ function SessionDetailInner({
       if (syncedTimerRef.current) clearTimeout(syncedTimerRef.current);
     };
   }, []);
+
+  /* ── Timer: increment every minute when session is OPEN ── */
+  function updateCurrentDayTime(ticks: number) {
+    const days = session.sessions ?? [];
+    if (!days.length) return;
+    const updatedDays = days.map((d, i) =>
+      i === days.length - 1 ? { ...d, minutesLogged: (d.minutesLogged ?? 0) + 5 } : d
+    );
+    const totalMinutes = updatedDays.reduce((sum, d) => sum + (d.minutesLogged ?? 0), 0);
+    onUpdate({ ...session, sessions: updatedDays, totalMinutes, lastActiveAt: new Date().toISOString().slice(0, 10) });
+  }
+
+  updateCurrentDayTimeRef.current = updateCurrentDayTime;
+
+  useEffect(() => {
+    if (session.status !== 'OPEN') return;
+    let ticks = 0;
+    const interval = setInterval(() => {
+      ticks++;
+      setSessionTimer(ticks);
+      if (ticks % 5 === 0) updateCurrentDayTimeRef.current(ticks);
+    }, 60000);
+    return () => clearInterval(interval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session.status]);
 
   /* ── Show save indicator ── */
   function showSave(type: SaveMsgType) {
@@ -219,6 +259,15 @@ function SessionDetailInner({
 
   /* ── Save helper ── */
   function save(overrides: Partial<VibeSession> = {}, msgType: SaveMsgType = 'saved') {
+    /* When OPEN, persist notes to the current SessionDay */
+    let updatedSessions = session.sessions ?? [];
+    if (session.status === 'OPEN' && updatedSessions.length > 0) {
+      updatedSessions = updatedSessions.map((d, i) =>
+        i === updatedSessions.length - 1
+          ? { ...d, notesWorked: localWorked, notesToImprove: localImprove }
+          : d
+      );
+    }
     const updated: VibeSession = {
       ...session,
       title: localTitle,
@@ -228,6 +277,7 @@ function SessionDetailInner({
       notes: { worked: localWorked, improve: localImprove },
       backlogItems,
       jiraSyncedIds,
+      sessions: updatedSessions,
       ...overrides,
     };
     onUpdate(updated);
@@ -287,6 +337,36 @@ function SessionDetailInner({
     LOW:    { color: '#64748B', bg: '#F1F5F9',  cyber: '#6B7280' },
   };
 
+  /* ── Reopen session: create a new SessionDay ── */
+  function handleReopenSession() {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const existingDays = session.sessions ?? [];
+    const newDay: SessionDay = {
+      id: `day-${session.id}-${existingDays.length + 1}`,
+      date: today,
+      startedAt: now.toISOString(),
+      minutesLogged: 0,
+      notesWorked: '',
+      notesToImprove: '',
+      xpEarned: 0,
+    };
+    setLocalWorked('');
+    setLocalImprove('');
+    setSessionTimer(0);
+    save(
+      {
+        status: 'OPEN',
+        sessions: [...existingDays, newDay],
+        lastActiveAt: today,
+      },
+      'reopened'
+    );
+    dispatchXPEvent({ id: `reopen-${Date.now()}`, label: 'Session continued', amount: 25, timestamp: Date.now() });
+    vibeToast.info('Session reopened');
+    if (isCyber) vibeToast.ai('✦ Session continued — new day logged');
+  }
+
   function handleCloseSession() {
     const primaryFeatureId = session.linkedFeatureIds[0];
     if (primaryFeatureId) {
@@ -302,9 +382,29 @@ function SessionDetailInner({
         selectedStatus: detected.status,
       });
     } else {
-      save({ status: 'CLOSED' }, 'closed');
+      save({ status: 'CLOSED', ...finalizeCurrentDay() }, 'closed');
       vibeToast.info('Session closed');
     }
+  }
+
+  /* Finalize the current SessionDay when closing */
+  function finalizeCurrentDay(): Partial<VibeSession> {
+    const now = new Date().toISOString();
+    const existingDays = session.sessions ?? [];
+    if (!existingDays.length) return {};
+    const updatedDays = existingDays.map((d, i) =>
+      i === existingDays.length - 1
+        ? {
+            ...d,
+            endedAt: now,
+            minutesLogged: (d.minutesLogged ?? 0) + sessionTimer,
+            notesWorked: localWorked,
+            notesToImprove: localImprove,
+          }
+        : d
+    );
+    const totalMinutes = updatedDays.reduce((sum, d) => sum + (d.minutesLogged ?? 0), 0);
+    return { sessions: updatedDays, totalMinutes, lastActiveAt: now.slice(0, 10) };
   }
 
   function handleCloseAndAdvance() {
@@ -312,7 +412,7 @@ function SessionDetailInner({
     const sessionXP = Math.round(session.duration * 25);
     const xpBonus = detected?.xpBonus ?? 0;
 
-    save({ status: 'CLOSED' }, 'closed');
+    save({ status: 'CLOSED', ...finalizeCurrentDay() }, 'closed');
 
     if (featureId) {
       updateFeatureStatus(featureId, selectedStatus);
@@ -347,7 +447,7 @@ function SessionDetailInner({
   }
 
   function handleCloseWithoutAdvancing() {
-    save({ status: 'CLOSED' }, 'closed');
+    save({ status: 'CLOSED', ...finalizeCurrentDay() }, 'closed');
     setCloseModal({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA' });
     vibeToast.info('Session closed');
   }
@@ -447,7 +547,7 @@ function SessionDetailInner({
                 ● Closed
               </div>
               <button
-                onClick={() => { save({ status: 'OPEN' }, 'reopened'); vibeToast.info('Session reopened'); }}
+                onClick={handleReopenSession}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -504,6 +604,27 @@ function SessionDetailInner({
           <span style={{ fontSize: 12, color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)' }}>
             {formatFullDate(session.date)}
           </span>
+
+          {/* Total time */}
+          {(session.totalMinutes ?? 0) > 0 && (
+            <span style={{ fontSize: 12, color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)' }}>
+              {isCyber ? `${Math.floor((session.totalMinutes ?? 0) / 60)}H${(session.totalMinutes ?? 0) % 60 > 0 ? `${(session.totalMinutes ?? 0) % 60}M` : ''}_TOTAL` : `${Math.floor((session.totalMinutes ?? 0) / 60)}h ${(session.totalMinutes ?? 0) % 60 > 0 ? `${(session.totalMinutes ?? 0) % 60}m` : ''} total`}
+            </span>
+          )}
+
+          {/* Live timer */}
+          {!isClosed && sessionTimer > 0 && (
+            <span
+              style={{
+                fontSize: 11,
+                color: isCyber ? '#00FF88' : '#16A34A',
+                fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                fontWeight: 600,
+              }}
+            >
+              {isCyber ? `● LIVE +${sessionTimer}m` : `● Live +${sessionTimer}m`}
+            </span>
+          )}
 
           {/* Duration click-to-edit */}
           {!isClosed && editingDuration ? (
@@ -902,9 +1023,135 @@ function SessionDetailInner({
           )}
         </div>
 
+        {/* ── SESSION DAYS ── */}
+        {(session.sessions?.length ?? 0) > 0 && (
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ ...sectionLabel(isCyber), margin: 0 }}>
+                {isCyber ? '// SESSION_DAYS' : `Session Days (${session.sessions!.length})`}
+              </span>
+              <button
+                onClick={() => setDaysExpanded((v) => !v)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: C.meta,
+                }}
+              >
+                {daysExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            </div>
+
+            {daysExpanded && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                  borderLeft: `2px solid ${C.borderSubtle}`,
+                  paddingLeft: 12,
+                }}
+              >
+                {session.sessions!.map((day, idx) => {
+                  const isCurrentDay = idx === session.sessions!.length - 1 && !isClosed;
+                  const durationHrs = Math.floor(day.minutesLogged / 60);
+                  const durationMins = day.minutesLogged % 60;
+                  const durationLabel = durationHrs > 0
+                    ? `${durationHrs}h${durationMins > 0 ? ` ${durationMins}m` : ''}`
+                    : `${durationMins}m`;
+                  return (
+                    <div
+                      key={day.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 12,
+                        padding: '6px 0',
+                        borderBottom: `1px solid ${C.borderSubtle}`,
+                      }}
+                    >
+                      {/* Date dot */}
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: isCurrentDay
+                            ? (isCyber ? '#00FF88' : '#16A34A')
+                            : C.meta,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 12,
+                          color: isCurrentDay ? (isCyber ? '#F0FFF4' : '#0F172A') : C.meta,
+                          fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                          fontWeight: isCurrentDay ? 600 : 400,
+                          flex: 1,
+                        }}
+                      >
+                        {day.date}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: C.meta,
+                          fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                        }}
+                      >
+                        {isCyber ? durationLabel.replace('h', 'H').replace('m', 'M') : durationLabel}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: isCyber ? '#00FF88' : '#16A34A',
+                          fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        +{day.xpEarned} XP
+                      </span>
+                      {isCurrentDay && (
+                        <span
+                          style={{
+                            fontSize: 9,
+                            color: isCyber ? '#00FF88' : '#16A34A',
+                            fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                          }}
+                        >
+                          {isCyber ? 'ACTIVE' : 'Active'}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── SESSION NOTES ── */}
         <div>
-          <span style={sectionLabel(isCyber)}>{isCyber ? '// SESSION_NOTES' : 'Session Notes'}</span>
+          <span style={sectionLabel(isCyber)}>
+            {isCyber
+              ? (isClosed ? '// FINAL_NOTES' : '// TODAYS_NOTES')
+              : (isClosed ? 'Final Notes' : "Today's Notes")}
+          </span>
           <div className="notes-grid">
             {/* What worked */}
             <div>
@@ -1339,6 +1586,73 @@ function SessionDetailInner({
             </>
           )}
         </div>
+
+        {/* ── STATUS HISTORY ── */}
+        {(session.autoStatusHistory?.length ?? 0) > 0 && (
+          <div>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 8,
+              }}
+            >
+              <span style={{ ...sectionLabel(isCyber), margin: 0 }}>
+                {isCyber ? '// STATUS_HISTORY' : 'Status History'}
+              </span>
+              <button
+                onClick={() => setStatusHistoryOpen((v) => !v)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: C.meta,
+                }}
+              >
+                {statusHistoryOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+            </div>
+
+            {statusHistoryOpen && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {session.autoStatusHistory!.map((entry) => {
+                  const fromCfg = STATUS_CONFIG[entry.fromStatus] ?? STATUS_CONFIG.IDEA;
+                  const toCfg = STATUS_CONFIG[entry.toStatus] ?? STATUS_CONFIG.IDEA;
+                  return (
+                    <div
+                      key={entry.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        padding: '6px 10px',
+                        background: C.cardBg,
+                        border: `1px solid ${C.cardBorder}`,
+                        fontSize: 11,
+                        fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                      }}
+                    >
+                      <span style={{ color: fromCfg.color, fontWeight: 600 }}>{entry.fromStatus}</span>
+                      <span style={{ color: C.meta }}>→</span>
+                      <span style={{ color: toCfg.color, fontWeight: 600 }}>{entry.toStatus}</span>
+                      <span style={{ color: C.meta, flex: 1 }}>{entry.trigger}</span>
+                      <span style={{ color: C.meta, fontSize: 10 }}>
+                        {entry.automatic ? (isCyber ? '[AUTO]' : 'auto') : (isCyber ? '[MANUAL]' : 'manual')}
+                      </span>
+                      <span style={{ color: C.meta, fontSize: 10 }}>
+                        {entry.timestamp.slice(0, 10)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Bottom padding */}
         <div style={{ height: 32 }} />

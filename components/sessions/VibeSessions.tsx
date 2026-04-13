@@ -31,6 +31,30 @@ const SAMPLE_SESSIONS: VibeSession[] = [
       { id: 'b3', title: 'Sticky header implementation', status: 'DONE', jiraId: 'FIS-203' },
     ],
     jiraSyncedIds: ['FIS-201', 'FIS-202', 'FIS-203'],
+    totalMinutes: 180,
+    sessions: [
+      {
+        id: 'day-s1-1',
+        date: '2026-06-07',
+        startedAt: '2026-06-07T09:00:00Z',
+        endedAt: '2026-06-07T11:00:00Z',
+        minutesLogged: 120,
+        notesWorked: 'v0 generated the table structure perfectly on first try. Color coding logic was clean.',
+        notesToImprove: 'Need to handle empty states better.',
+        xpEarned: 300,
+      },
+      {
+        id: 'day-s1-2',
+        date: '2026-06-09',
+        startedAt: '2026-06-09T10:00:00Z',
+        minutesLogged: 60,
+        notesWorked: 'Recharts integration was straightforward. Added filtering.',
+        notesToImprove: 'Currency formatting was inconsistent. Should add a sticky header for long tables.',
+        xpEarned: 200,
+      },
+    ],
+    lastActiveAt: '2026-06-09',
+    autoStatusHistory: [],
   },
   {
     id: 's2',
@@ -51,6 +75,21 @@ const SAMPLE_SESSIONS: VibeSession[] = [
       { id: 'b5', title: 'HS code autocomplete', status: 'TODO', jiraId: '' },
     ],
     jiraSyncedIds: ['FIS-211'],
+    totalMinutes: 120,
+    sessions: [
+      {
+        id: 'day-s2-1',
+        date: '2026-06-06',
+        startedAt: '2026-06-06T09:00:00Z',
+        endedAt: '2026-06-06T11:00:00Z',
+        minutesLogged: 120,
+        notesWorked: 'Zod schema covered all the HS code edge cases. Claude prompt for schema generation saved about an hour.',
+        notesToImprove: 'The error message UX needs work — too many errors shown at once. Need progressive disclosure.',
+        xpEarned: 300,
+      },
+    ],
+    lastActiveAt: '2026-06-06',
+    autoStatusHistory: [],
   },
   {
     id: 's3',
@@ -71,6 +110,21 @@ const SAMPLE_SESSIONS: VibeSession[] = [
       { id: 'b7', title: 'Add unit test coverage to 90%', status: 'TODO', jiraId: 'FIS-222' },
     ],
     jiraSyncedIds: ['FIS-221'],
+    totalMinutes: 90,
+    sessions: [
+      {
+        id: 'day-s3-1',
+        date: '2026-06-04',
+        startedAt: '2026-06-04T09:00:00Z',
+        endedAt: '2026-06-04T10:30:00Z',
+        minutesLogged: 90,
+        notesWorked: 'Emission factor lookup table was clean. Memoization worked perfectly. Grade calculation (A-F) was intuitive.',
+        notesToImprove: 'Unit tests took longer than expected. Need to add SEA transport mode — missed in first pass.',
+        xpEarned: 300,
+      },
+    ],
+    lastActiveAt: '2026-06-04',
+    autoStatusHistory: [],
   },
   {
     id: 's4',
@@ -91,6 +145,31 @@ const SAMPLE_SESSIONS: VibeSession[] = [
       { id: 'b9', title: 'Dead letter queue monitoring', status: 'TODO', jiraId: 'FIS-232' },
     ],
     jiraSyncedIds: [],
+    totalMinutes: 240,
+    sessions: [
+      {
+        id: 'day-s4-1',
+        date: '2026-05-28',
+        startedAt: '2026-05-28T09:00:00Z',
+        endedAt: '2026-05-28T11:00:00Z',
+        minutesLogged: 120,
+        notesWorked: 'HMAC validation was solid. Set up the Redis queue structure.',
+        notesToImprove: 'Need to handle timeout edge cases.',
+        xpEarned: 300,
+      },
+      {
+        id: 'day-s4-2',
+        date: '2026-05-29',
+        startedAt: '2026-05-29T09:00:00Z',
+        endedAt: '2026-05-29T11:00:00Z',
+        minutesLogged: 120,
+        notesWorked: 'Redis queue pattern worked well. Cursor autocomplete was very helpful here.',
+        notesToImprove: 'Need better dead letter queue handling. Retry logic needs exponential backoff not fixed intervals.',
+        xpEarned: 300,
+      },
+    ],
+    lastActiveAt: '2026-05-29',
+    autoStatusHistory: [],
   },
   {
     id: 's5',
@@ -111,6 +190,21 @@ const SAMPLE_SESSIONS: VibeSession[] = [
       { id: 'b11', title: 'Lane name truncation in BarChart', status: 'DONE', jiraId: 'FIS-242' },
     ],
     jiraSyncedIds: ['FIS-241', 'FIS-242'],
+    totalMinutes: 150,
+    sessions: [
+      {
+        id: 'day-s5-1',
+        date: '2026-05-26',
+        startedAt: '2026-05-26T09:00:00Z',
+        endedAt: '2026-05-26T11:30:00Z',
+        minutesLogged: 150,
+        notesWorked: 'Scatter plot was the highlight — cost vs transit time tells a clear story. Shared filter state was clean.',
+        notesToImprove: 'BarChart for top 10 lanes needs better truncation on long lane names. Mobile layout is broken.',
+        xpEarned: 300,
+      },
+    ],
+    lastActiveAt: '2026-05-26',
+    autoStatusHistory: [],
   },
   {
     id: 's6',
@@ -131,6 +225,21 @@ const SAMPLE_SESSIONS: VibeSession[] = [
       { id: 'b13', title: 'EU date format support', status: 'TODO', jiraId: '' },
     ],
     jiraSyncedIds: [],
+    totalMinutes: 60,
+    sessions: [
+      {
+        id: 'day-s6-1',
+        date: '2026-05-20',
+        startedAt: '2026-05-20T09:00:00Z',
+        endedAt: '2026-05-20T10:00:00Z',
+        minutesLogged: 60,
+        notesWorked: 'Few-shot examples dramatically improved extraction accuracy. Null handling for missing fields worked cleanly.',
+        notesToImprove: 'Need to handle multi-currency amounts better. Some date formats from EU customers are parsed incorrectly.',
+        xpEarned: 300,
+      },
+    ],
+    lastActiveAt: '2026-05-20',
+    autoStatusHistory: [],
   },
 ];
 
@@ -177,9 +286,11 @@ export default function VibeSessions() {
   }
 
   function handleNew() {
-    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const id = Date.now().toString();
     const newSession: VibeSession = {
-      id: Date.now().toString(),
+      id,
       title: 'New session',
       date: today,
       duration: 1,
@@ -191,6 +302,20 @@ export default function VibeSessions() {
       notes: { worked: '', improve: '' },
       backlogItems: [],
       jiraSyncedIds: [],
+      totalMinutes: 0,
+      sessions: [
+        {
+          id: `day-${id}-1`,
+          date: today,
+          startedAt: now.toISOString(),
+          minutesLogged: 0,
+          notesWorked: '',
+          notesToImprove: '',
+          xpEarned: 0,
+        },
+      ],
+      lastActiveAt: today,
+      autoStatusHistory: [],
     };
     setSessions((prev) => [newSession, ...prev]);
     setSelectedId(newSession.id);
