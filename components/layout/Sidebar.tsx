@@ -16,6 +16,7 @@ import {
   ChevronRight,
   LogOut,
   Gamepad2,
+  Shield,
 } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
@@ -218,12 +219,14 @@ export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [userHovered, setUserHovered] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
   const { theme } = useTheme();
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'true') setCollapsed(true);
+    setIsAdmin(localStorage.getItem('vibeflow-is-admin') === 'true');
     setMounted(true);
   }, []);
 
@@ -467,6 +470,75 @@ export default function Sidebar() {
                   isLive
                 />
               )}
+              {group.label === 'System' && isAdmin && (
+                <Link
+                  href="/dashboard/controller"
+                  title={collapsed ? 'CTRL_ROOM' : undefined}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: collapsed ? 'center' : 'space-between',
+                    height: 44,
+                    paddingLeft: collapsed ? 0 : 16,
+                    paddingRight: collapsed ? 0 : 16,
+                    fontFamily: "'Space Grotesk', sans-serif",
+                    fontSize: 14,
+                    fontWeight: 500,
+                    color: pathname === '/dashboard/controller' ? '#FF4444' : '#6B7280',
+                    background: pathname === '/dashboard/controller' ? 'rgba(255,68,68,0.08)' : 'transparent',
+                    borderRight: pathname === '/dashboard/controller' ? '2px solid #FF4444' : '2px solid transparent',
+                    textDecoration: 'none',
+                    transition: 'all 100ms ease',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ position: 'relative', flexShrink: 0 }}>
+                      <Shield
+                        size={16}
+                        style={{
+                          color: pathname === '/dashboard/controller' ? '#FF4444' : '#6B7280',
+                          display: 'block',
+                        }}
+                      />
+                      {!collapsed && (
+                        <span
+                          className="animate-blink"
+                          style={{
+                            position: 'absolute',
+                            top: -3,
+                            right: -3,
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            background: '#FF4444',
+                            boxShadow: '0 0 6px rgba(255,68,68,0.8)',
+                          }}
+                        />
+                      )}
+                    </span>
+                    {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>CTRL_ROOM</span>}
+                  </div>
+                  {!collapsed && (
+                    <span
+                      style={{
+                        fontFamily: "'JetBrains Mono', monospace",
+                        fontSize: 9,
+                        color: '#FF4444',
+                        background: 'rgba(255,68,68,0.15)',
+                        border: '1px solid rgba(255,68,68,0.3)',
+                        borderRadius: 4,
+                        padding: '1px 5px',
+                        letterSpacing: '0.06em',
+                        flexShrink: 0,
+                      }}
+                    >
+                      ADMIN
+                    </span>
+                  )}
+                </Link>
+              )}
             </div>
           ))}
         </nav>
@@ -627,6 +699,15 @@ export default function Sidebar() {
                 showErrorDot={item.errorDot && SYNC_ERROR_COUNT > 0}
               />
             ))}
+            {group.label === 'System' && isAdmin && (
+              <NavItem
+                href="/dashboard/controller"
+                label="Controller Room"
+                icon={Shield}
+                isActive={pathname === '/dashboard/controller'}
+                collapsed={collapsed}
+              />
+            )}
           </div>
         ))}
       </nav>
