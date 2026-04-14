@@ -20,7 +20,27 @@ export function addPromotedFeature(feature: Feature): void {
   savePromotedFeatures(updated);
 }
 
+export function getStatusOverrides(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const stored = localStorage.getItem('vibeflow-status-overrides');
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveStatusOverride(featureId: string, status: string): void {
+  const current = getStatusOverrides();
+  current[featureId] = status;
+  localStorage.setItem('vibeflow-status-overrides', JSON.stringify(current));
+}
+
 export function updateFeatureStatus(featureId: string, newStatus: string): void {
+  // Primary: write to status overrides (survives across all feature origins)
+  saveStatusOverride(featureId, newStatus);
+
+  // Also update in promoted features array if it's there
   const features = getPromotedFeatures();
   const updated = features.map((f) =>
     f.id === featureId ? { ...f, status: newStatus as Feature['status'] } : f

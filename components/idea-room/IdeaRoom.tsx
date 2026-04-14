@@ -156,17 +156,22 @@ export default function IdeaRoom() {
 
   function handleConfirmPromote(idea: Idea, formData: PromoteFormData) {
     const feature: Feature = {
-      id: formData.id,
+      id: formData.id || `promoted-${Date.now()}`,
       title: idea.title,
       problemStatement: idea.problemStatement || idea.description,
       status: 'IDEA',
       size: formData.size,
-      quarter: formData.quarter,
-      owner: formData.owner,
+      quarter: formData.quarter || 'Q3 2026',
+      owner: formData.owner || idea.author,
     };
 
+    // 1. Save to localStorage
     addPromotedFeature(feature);
 
+    // 2. Dispatch event so same-tab Feature Board updates immediately
+    window.dispatchEvent(new CustomEvent('feature-promoted', { detail: { feature } }));
+
+    // 3. Update idea stage in local state
     setIdeas((prev) =>
       prev.map((i) =>
         i.id === idea.id
@@ -174,7 +179,7 @@ export default function IdeaRoom() {
               ...i,
               stage: 'PROMOTED',
               promotedAt: new Date().toISOString().split('T')[0],
-              featureId: formData.id,
+              featureId: feature.id,
               updatedAt: new Date().toISOString().split('T')[0],
             }
           : i
@@ -183,6 +188,7 @@ export default function IdeaRoom() {
 
     setPromoteTarget(null);
 
+    // 4. XP + toast
     dispatchXPEvent({
       id: `promote-${Date.now()}`,
       label: `Idea promoted: ${idea.title}`,
@@ -190,7 +196,7 @@ export default function IdeaRoom() {
       timestamp: Date.now(),
     });
 
-    vibeToast.success(`Idea promoted to Feature Board!`);
+    vibeToast.success(`"${idea.title}" is now on the Feature Board!`);
 
     if (isCyber) {
       vibeToast.ai(`✦ +100 XP — Idea promoted to board`);

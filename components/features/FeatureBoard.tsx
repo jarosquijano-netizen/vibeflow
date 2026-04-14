@@ -22,7 +22,7 @@ import FeatureCompletionCelebration from './FeatureCompletionCelebration';
 import { getFeatureRewards, type FeatureReward, type TShirtSize } from '@/lib/feature-rewards';
 import { dispatchXPEvent } from '@/lib/xp-engine';
 import { vibeToast } from '@/components/polish/toasts';
-import { getPromotedFeatures, updateFeatureStatus } from '@/lib/feature-store';
+import { getPromotedFeatures, updateFeatureStatus, getStatusOverrides, saveStatusOverride } from '@/lib/feature-store';
 
 /* ------------------------------------------------------------------ */
 /*  Sample data                                                         */
@@ -61,13 +61,46 @@ function ownerInitials(name: string) {
 const OWNERS = ['Jordan Davies', 'Sara Kim', 'Marcus Bell'];
 
 /* ------------------------------------------------------------------ */
+/*  Initial state helpers                                               */
+/* ------------------------------------------------------------------ */
+function getInitialFeatures(): Feature[] {
+  const base = [...SAMPLE_FEATURES];
+  if (typeof window === 'undefined') return base;
+
+  try {
+    const overrides = getStatusOverrides();
+    const promoted = getPromotedFeatures();
+
+    // Merge: promoted features not already in base are prepended
+    const baseIds = new Set(base.map((f) => f.id));
+    const newPromoted = promoted.filter((p) => !baseIds.has(p.id));
+
+    // Apply status overrides to base features
+    const merged = base.map((f) => ({
+      ...f,
+      status: (overrides[f.id] as Feature['status']) || f.status,
+    }));
+
+    // Also apply overrides to promoted-that-became-base
+    const promotedWithOverrides = newPromoted.map((f) => ({
+      ...f,
+      status: (overrides[f.id] as Feature['status']) || f.status,
+    }));
+
+    return [...promotedWithOverrides, ...merged];
+  } catch {
+    return base;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  FeatureBoard                                                        */
 /* ------------------------------------------------------------------ */
 export default function FeatureBoard() {
   const { theme } = useTheme();
   const isCyber = theme === 'cyber';
 
-  const [features, setFeatures] = useState<Feature[]>(SAMPLE_FEATURES);
+  const [features, setFeatures] = useState<Feature[]>(getInitialFeatures);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -82,55 +115,45 @@ export default function FeatureBoard() {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  /* ── Merge promoted features on mount + storage events ── */
-  function mergeWithPromoted(current: Feature[], promoted: Feature[]): Feature[] {
-    const ids = new Set(current.map((f) => f.id));
-    const newOnes = promoted.filter((f) => !ids.has(f.id));
-    return newOnes.length > 0 ? [...newOnes, ...current] : current;
-  }
-
+  /* ── Sync: storage events (cross-tab) + custom events (same-tab) ── */
   useEffect(() => {
-    const promoted = getPromotedFeatures();
-    if (promoted.length > 0) {
-      setFeatures((prev) => {
-        const merged = mergeWithPromoted(prev, promoted);
-        if (merged.length > prev.length) {
-          const added = merged.length - prev.length;
-          vibeToast.success(`⚡ ${added} idea${added !== 1 ? 's' : ''} promoted to board`);
-        }
-        return merged;
-      });
-    }
-
+    // Cross-tab: re-build state when localStorage changes
     function handleStorage(e: StorageEvent) {
-      if (e.key === 'vibeflow-promoted-features') {
-        const promoted = getPromotedFeatures();
-        setFeatures((prev) => {
-          const merged = mergeWithPromoted(prev, promoted);
-          if (merged.length > prev.length) {
-            vibeToast.success('⚡ New idea promoted to board');
-          }
-          return merged;
-        });
+      if (
+        e.key === 'vibeflow-promoted-features' ||
+        e.key === 'vibeflow-status-overrides'
+      ) {
+        setFeatures(getInitialFeatures());
       }
     }
 
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
-
-  /* ── Listen for feature status updates from Session close ── */
-  useEffect(() => {
+    // Same-tab: feature status advanced (from Session close or auto-advance)
     function handleStatusUpdate(e: CustomEvent) {
       const { featureId, newStatus } = e.detail as { featureId: string; newStatus: string };
       setFeatures((prev) =>
         prev.map((f) => (f.id === featureId ? { ...f, status: newStatus as Feature['status'] } : f))
       );
-      updateFeatureStatus(featureId, newStatus);
+      // updateFeatureStatus already called by the sender; skip double-write
     }
 
+    // Same-tab: new idea promoted from Idea Room
+    function handleFeaturePromoted(e: CustomEvent) {
+      const { feature } = e.detail as { feature: Feature };
+      setFeatures((prev) => {
+        if (prev.find((f) => f.id === feature.id)) return prev;
+        vibeToast.success(`⚡ "${feature.title}" added to Feature Board`);
+        return [feature, ...prev];
+      });
+    }
+
+    window.addEventListener('storage', handleStorage);
     window.addEventListener('feature-status-updated', handleStatusUpdate as EventListener);
-    return () => window.removeEventListener('feature-status-updated', handleStatusUpdate as EventListener);
+    window.addEventListener('feature-promoted', handleFeaturePromoted as EventListener);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('feature-status-updated', handleStatusUpdate as EventListener);
+      window.removeEventListener('feature-promoted', handleFeaturePromoted as EventListener);
+    };
   }, []);
 
   const activeFeature = features.find((f) => f.id === activeId) ?? null;
@@ -176,6 +199,7 @@ export default function FeatureBoard() {
         setFeatures((prev) =>
           prev.map((f) => f.id === activeFeatureId ? { ...f, status: newStatus } : f)
         );
+        saveStatusOverride(activeFeatureId, newStatus);
         if (dragged && newStatus === 'DONE' && dragged.status !== 'DONE') {
           triggerCelebration(dragged, newStatus);
         }
@@ -193,6 +217,7 @@ export default function FeatureBoard() {
           f.id === activeFeatureId ? { ...f, status: overFeature.status } : f
         );
       });
+      saveStatusOverride(activeFeatureId, overFeature.status);
       if (dragged && overFeature.status === 'DONE' && dragged.status !== 'DONE') {
         triggerCelebration(dragged, overFeature.status);
       }
@@ -624,6 +649,34 @@ export default function FeatureBoard() {
           setCelebrationReward(null);
         }}
       />
+
+      {/* Dev debug panel */}
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={() => {
+            console.log('[FeatureBoard debug]', {
+              features: features.map((f) => ({ id: f.id, title: f.title, status: f.status })),
+              overrides: (() => { try { return JSON.parse(localStorage.getItem('vibeflow-status-overrides') || '{}'); } catch { return {}; } })(),
+              promoted: (() => { try { return (JSON.parse(localStorage.getItem('vibeflow-promoted-features') || '[]') as Feature[]).map((f) => f.title); } catch { return []; } })(),
+            });
+          }}
+          style={{
+            position: 'fixed',
+            bottom: 16,
+            left: 16,
+            zIndex: 9999,
+            background: '#1A1A28',
+            border: '1px solid #3B4B3D',
+            color: '#6B7280',
+            fontSize: 11,
+            padding: '4px 8px',
+            cursor: 'pointer',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}
+        >
+          🔧 Debug State
+        </button>
+      )}
     </div>
   );
 }

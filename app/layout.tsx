@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { DM_Sans, JetBrains_Mono, Space_Grotesk } from 'next/font/google';
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { XPProvider } from "@/lib/xp-engine";
@@ -7,27 +6,6 @@ import { VibeToaster } from "@/components/polish/toasts";
 import CommandPalette from "@/components/polish/command-palette";
 import KeyboardShortcuts from "@/components/polish/keyboard-shortcuts";
 import GlobalShortcuts from "@/components/polish/global-shortcuts";
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
-  variable: '--font-dm-sans',
-  display: 'swap',
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
-  variable: '--font-jetbrains-mono',
-  display: 'swap',
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-space-grotesk',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: "VibeFlow",
@@ -54,7 +32,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`h-full antialiased ${dmSans.variable} ${jetbrainsMono.variable} ${spaceGrotesk.variable}`}
+      className="h-full antialiased"
     >
       <head>
         {/* eslint-disable-next-line @next/next/no-sync-scripts */}

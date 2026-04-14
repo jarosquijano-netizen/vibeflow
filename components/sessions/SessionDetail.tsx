@@ -367,11 +367,38 @@ function SessionDetailInner({
     if (isCyber) vibeToast.ai('✦ Session continued — new day logged');
   }
 
+  /* ── Resolve the primary linked feature, applying status overrides ── */
+  function getLinkedFeature(): { id: string; title: string; status: string; size: Feature['size'] } | null {
+    const featureId = session.linkedFeatureIds?.[0];
+    if (!featureId) return null;
+    try {
+      const overrides: Record<string, string> = JSON.parse(
+        localStorage.getItem('vibeflow-status-overrides') || '{}'
+      );
+      // Check promoted features first (may contain both promoted + updated sample features)
+      const promoted: Feature[] = JSON.parse(
+        localStorage.getItem('vibeflow-promoted-features') || '[]'
+      );
+      const promotedFeature = promoted.find((f) => f.id === featureId);
+      if (promotedFeature) {
+        return { id: featureId, title: promotedFeature.title, size: promotedFeature.size ?? null, status: overrides[featureId] ?? promotedFeature.status };
+      }
+      // Fall back to inline lookup (covers SAMPLE_FEATURES)
+      const lookup = FEATURES_LOOKUP[featureId];
+      if (lookup) {
+        return { id: featureId, title: lookup.title, size: lookup.size as Feature['size'], status: overrides[featureId] ?? lookup.status };
+      }
+      return null;
+    } catch {
+      const lookup = FEATURES_LOOKUP[featureId];
+      return lookup ? { id: featureId, title: lookup.title, size: lookup.size as Feature['size'], status: lookup.status } : null;
+    }
+  }
+
   function handleCloseSession() {
     const primaryFeatureId = session.linkedFeatureIds[0];
     if (primaryFeatureId) {
-      const features = getPromotedFeatures();
-      const currentFeature = features.find((f) => f.id === primaryFeatureId);
+      const currentFeature = getLinkedFeature();
       const detected = detectFeatureStatus(session, currentFeature?.status ?? 'IDEA');
       setCloseModal({
         open: true,
