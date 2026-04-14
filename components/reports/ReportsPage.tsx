@@ -1,21 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Download } from 'lucide-react';
-import { vibeToast } from '@/components/polish/toasts';
 import {
-  PieChart, Pie, Cell,
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
 } from 'recharts';
 import { GANTT_FEATURES } from '@/components/roadmap/RoadmapPage';
 import { ownerColor, ownerInitials, CYBER_STATUS_CONFIG } from '@/components/roadmap/GanttRow';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { vibeToast } from '@/components/polish/toasts';
+import { sampleVibeSessions } from '@/lib/sample-data';
+import { getActiveSessions } from '@/lib/feature-store';
+import { calcFeatureMetrics, calcSummary } from '@/lib/reports-engine';
+import type { VibeSession, Feature } from '@/types';
 import KPICard from './KPICard';
 import AISizingReport from './AISizingReport';
+import SessionTimeChart from './SessionTimeChart';
+import AutoVsManualCard from './AutoVsManualCard';
+import FeatureVelocityTable from './FeatureVelocityTable';
+import StatusFlowSankey from './StatusFlowSankey';
 
 /* ------------------------------------------------------------------ */
-/*  Config — Default                                                    */
+/*  Static config                                                       */
 /* ------------------------------------------------------------------ */
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   IDEA:        { color: '#94A3B8', bg: '#F8FAFC' },
@@ -29,7 +36,6 @@ const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
 const SIZE_COLORS: Record<string, string> = {
   XS: '#64748B', S: '#16A34A', M: '#2563EB', L: '#D97706', XL: '#DC2626',
 };
-
 const CYBER_SIZE: Record<string, string> = {
   XS: '#64748B', S: '#00FF88', M: '#00D4FF', L: '#FFB800', XL: '#FF4444',
 };
@@ -39,43 +45,31 @@ const UPDATED: Record<string, string> = {
   SCOPING: '1d ago', IDEA: '7d ago', PARKED: '30d ago',
 };
 
-/* ------------------------------------------------------------------ */
-/*  Chart data — Default                                                */
-/* ------------------------------------------------------------------ */
-const statusData = [
-  { name: 'IDEA',        value: 3,  color: '#94A3B8' },
-  { name: 'SCOPING',     value: 2,  color: '#7C3AED' },
-  { name: 'PROTOTYPING', value: 3,  color: '#2563EB' },
-  { name: 'BUILDING',    value: 6,  color: '#D97706' },
-  { name: 'DONE',        value: 8,  color: '#16A34A' },
-  { name: 'PARKED',      value: 2,  color: '#DC2626' },
-];
-
-const cyberStatusData = [
-  { name: 'IDEA',        value: 3,  color: '#6B7280' },
-  { name: 'SCOPING',     value: 2,  color: '#BF00FF' },
-  { name: 'PROTOTYPING', value: 3,  color: '#00D4FF' },
-  { name: 'BUILDING',    value: 6,  color: '#FFB800' },
-  { name: 'DONE',        value: 8,  color: '#00FF88' },
-  { name: 'PARKED',      value: 2,  color: '#FF4444' },
-];
-
 const quarterData = [
-  { quarter: 'Q1 2026', done: 8,  building: 0, other: 2  },
-  { quarter: 'Q2 2026', done: 2,  building: 6, other: 5  },
-  { quarter: 'Q3 2026', done: 0,  building: 0, other: 6  },
+  { quarter: 'Q1 2026', done: 8,  building: 0, other: 2 },
+  { quarter: 'Q2 2026', done: 2,  building: 6, other: 5 },
+  { quarter: 'Q3 2026', done: 0,  building: 0, other: 6 },
 ];
 
 const MONO = "'JetBrains Mono', monospace";
 
+const ROUTE_TABS = [
+  { label: 'Roadmap', path: '/dashboard/roadmap' },
+  { label: 'Reports', path: '/dashboard/reports' },
+];
+
 /* ------------------------------------------------------------------ */
-/*  Tooltips                                                            */
+/*  Tooltip components                                                  */
 /* ------------------------------------------------------------------ */
-function CustomBarTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; fill: string }[]; label?: string }) {
+function DefaultBarTooltip({ active, payload, label }: {
+  active?: boolean;
+  payload?: { name: string; value: number; fill: string }[];
+  label?: string;
+}) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '8px 10px', fontSize: 12, fontFamily: 'var(--font-dm-sans)' }}>
-      <div style={{ fontWeight: 600, marginBottom: 4, color: '#0F172A' }}>{label}</div>
+    <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: '8px 10px', fontSize: 12, fontFamily: 'var(--font-dm-sans)', borderRadius: 4 }}>
+      <div style={{ fontWeight: 600, color: '#0F172A', marginBottom: 4 }}>{label}</div>
       {payload.map((p) => (
         <div key={p.name} style={{ color: p.fill }}>
           {p.name.charAt(0).toUpperCase() + p.name.slice(1)}: {p.value}
@@ -85,15 +79,17 @@ function CustomBarTooltip({ active, payload, label }: { active?: boolean; payloa
   );
 }
 
-function CyberBarTooltip({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; fill: string }[]; label?: string }) {
+function CyberBarTooltip({ active, payload, label }: {
+  active?: boolean;
+  payload?: { name: string; value: number; fill: string }[];
+  label?: string;
+}) {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: '#12121E', border: '1px solid #3B4B3D', padding: '6px 10px', fontFamily: MONO, fontSize: 12, borderRadius: 4 }}>
+    <div style={{ background: '#0D0D17', border: '1px solid #3B4B3D', padding: '6px 10px', fontFamily: MONO, fontSize: 12, borderRadius: 4 }}>
       <div style={{ color: '#9CA3AF', marginBottom: 4 }}>{label}</div>
       {payload.map((p) => (
-        <div key={p.name} style={{ color: p.fill, fontFamily: MONO }}>
-          {p.name}: {p.value}
-        </div>
+        <div key={p.name} style={{ color: p.fill, fontFamily: MONO }}>{p.name}: {p.value}</div>
       ))}
     </div>
   );
@@ -119,302 +115,118 @@ function handleExportCSV() {
 }
 
 /* ------------------------------------------------------------------ */
-/*  ReportsPage                                                         */
+/*  Types                                                               */
 /* ------------------------------------------------------------------ */
 type SortField = 'title' | 'status' | 'size' | 'quarter' | 'progress';
+type InnerTab  = 'overview' | 'velocity';
 
-const TABS = [
-  { label: 'Roadmap', path: '/dashboard/roadmap' },
-  { label: 'Reports', path: '/dashboard/reports' },
-];
-
+/* ------------------------------------------------------------------ */
+/*  ReportsPage                                                         */
+/* ------------------------------------------------------------------ */
 export default function ReportsPage() {
-  const router = useRouter();
-  const pathname = usePathname();
+  const router    = useRouter();
+  const pathname  = usePathname();
   const { theme } = useTheme();
-  const isCyber = theme === 'cyber';
+  const isCyber   = theme === 'cyber';
 
+  /* ── State ── */
+  const [activeTab, setActiveTab] = useState<InnerTab>('overview');
   const [sortField, setSortField] = useState<SortField>('quarter');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [sortDir,   setSortDir]   = useState<'asc' | 'desc'>('asc');
+  const [sessions,  setSessions]  = useState<VibeSession[]>([...sampleVibeSessions]);
 
+  /* ── Merge localStorage sessions ── */
+  useEffect(() => {
+    const active = getActiveSessions();
+    if (active.length > 0) {
+      setSessions((prev) => {
+        const ids  = new Set(prev.map((s) => s.id));
+        const fresh = active.filter((s) => !ids.has(s.id));
+        return fresh.length > 0 ? [...fresh, ...prev] : prev;
+      });
+    }
+  }, []);
+
+  /* ── Computed metrics ── */
+  const metrics     = calcFeatureMetrics(GANTT_FEATURES as unknown as Feature[], sessions);
+  const summary     = calcSummary(sessions, metrics);
+  const autoCount   = sessions.flatMap((s) => (s.autoStatusHistory ?? []).filter((h) => h.automatic)).length;
+  const manualCount = sessions.flatMap((s) => (s.autoStatusHistory ?? []).filter((h) => !h.automatic)).length;
+
+  const topFeatures  = [...metrics].sort((a, b) => b.totalMinutes - a.totalMinutes).slice(0, 3);
+  const maxTopHours  = Math.max(topFeatures[0]?.totalHours ?? 1, 1);
+
+  /* ── Table sort ── */
   function toggleSort(field: SortField) {
     if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else { setSortField(field); setSortDir('asc'); }
   }
-
   const sorted = [...GANTT_FEATURES].sort((a, b) => {
     let av: string | number = '';
     let bv: string | number = '';
-    if (sortField === 'title')    { av = a.title; bv = b.title; }
-    if (sortField === 'status')   { av = a.status; bv = b.status; }
+    if (sortField === 'title')    { av = a.title;    bv = b.title; }
+    if (sortField === 'status')   { av = a.status;   bv = b.status; }
     if (sortField === 'size')     { av = ['XS','S','M','L','XL'].indexOf(a.size); bv = ['XS','S','M','L','XL'].indexOf(b.size); }
-    if (sortField === 'quarter')  { av = a.quarter; bv = b.quarter; }
+    if (sortField === 'quarter')  { av = a.quarter;  bv = b.quarter; }
     if (sortField === 'progress') { av = a.progress; bv = b.progress; }
     if (av < bv) return sortDir === 'asc' ? -1 : 1;
-    if (av > bv) return sortDir === 'asc' ? 1 : -1;
+    if (av > bv) return sortDir === 'asc' ? 1  : -1;
     return 0;
   });
 
-  /* ================================================================ */
-  /*  CYBER RENDER                                                     */
-  /* ================================================================ */
-  if (isCyber) {
+  /* ── Theme vars ── */
+  const C = {
+    cardBg:     isCyber ? '#111118'  : '#FFFFFF',
+    cardBorder: isCyber ? '#2A2A3E'  : '#E2E8F0',
+    tableBg:    isCyber ? '#0A0A0F'  : '#FFFFFF',
+    tableAlt:   isCyber ? '#0D0D17'  : '#F8FAFC',
+    tableHover: isCyber ? 'rgba(0,255,136,0.03)' : '#EFF6FF',
+    headerBg:   isCyber ? '#12121E'  : '#F8FAFC',
+    body:       isCyber ? '#9CA3AF'  : '#0F172A',
+    meta:       isCyber ? '#6B7280'  : '#94A3B8',
+    accent:     isCyber ? '#00FF88'  : '#2563EB',
+    tabBorder:  isCyber ? '#3B4B3D'  : '#E2E8F0',
+  };
+
+  function InnerTabBtn({ tab, label }: { tab: InnerTab; label: string }) {
+    const isActive = activeTab === tab;
     return (
-      <div>
-        {/* ── TAB SWITCHER — cyber ── */}
-        <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #3B4B3D', marginBottom: 16 }}>
-          {TABS.map(({ label, path }) => {
-            const isActive = pathname === path;
-            return (
-              <button
-                key={path}
-                onClick={() => router.push(path)}
-                style={{
-                  paddingBottom: 8,
-                  fontFamily: MONO,
-                  fontSize: 14,
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? '#F0FFF4' : '#6B7280',
-                  background: 'none',
-                  border: 'none',
-                  borderBottom: isActive ? '2px solid #00FF88' : '2px solid transparent',
-                  cursor: 'pointer',
-                  transition: 'color 100ms ease',
-                }}
-                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = '#9CA3AF'; }}
-                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = '#6B7280'; }}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── KPI STRIP — cyber ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
-          <KPICard label="Total Features"      value="24"  delta="+3 this month"     deltaType="positive" />
-          <KPICard label="In Building"         value="6"   delta="85% Jira-synced"   deltaType="positive" />
-          <KPICard label="Backlog Progress"    value="39%" delta="47 of 120 done"    deltaType="neutral"  />
-          <KPICard label="Sessions This Month" value="8"   delta="+2 vs last month"  deltaType="positive" />
-          <KPICard label="AI Size Acceptance"  value="72%" delta="18 of 25 features" deltaType="positive" />
-        </div>
-
-        {/* ── CHARTS ROW — cyber ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-
-          {/* Status Donut — cyber */}
-          <div style={{ background: '#111118', border: '1px solid #3B4B3D', borderRadius: 6, padding: 16, height: 240 }}>
-            <div style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.06em', marginBottom: 12 }}>
-              Feature Status
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              {/* Donut */}
-              <div style={{ position: 'relative', width: 180, height: 180, flexShrink: 0 }}>
-                <PieChart width={180} height={180}>
-                  <Pie
-                    data={cyberStatusData}
-                    cx={90}
-                    cy={90}
-                    innerRadius={58}
-                    outerRadius={82}
-                    dataKey="value"
-                    startAngle={90}
-                    endAngle={-270}
-                    strokeWidth={0}
-                  >
-                    {cyberStatusData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                </PieChart>
-                {/* Center label */}
-                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-                  <div style={{ fontFamily: MONO, fontSize: 20, fontWeight: 700, color: '#F0FFF4', lineHeight: 1 }}>24</div>
-                  <div style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', marginTop: 2 }}>total</div>
-                </div>
-              </div>
-              {/* Legend */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-                {cyberStatusData.map((d) => (
-                  <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ width: 8, height: 8, background: d.color, flexShrink: 0 }} />
-                    <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280', flex: 1 }}>{d.name}</span>
-                    <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280' }}>{d.value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Quarter Progress — cyber */}
-          <div style={{ background: '#111118', border: '1px solid #3B4B3D', borderRadius: 6, padding: 16, height: 240 }}>
-            <div style={{ fontFamily: MONO, fontSize: 12, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.06em', marginBottom: 12 }}>
-              Quarter Progress
-            </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={quarterData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-                <XAxis type="number" tick={{ fontSize: 11, fontFamily: MONO, fill: '#3B4B3D' }} axisLine={false} tickLine={false} />
-                <YAxis type="category" dataKey="quarter" width={64} tick={{ fontSize: 11, fontFamily: MONO, fill: '#6B7280' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CyberBarTooltip />} cursor={{ fill: 'rgba(0,255,136,0.03)' }} />
-                <Bar dataKey="done"     stackId="a" fill="#00FF88" name="done"     radius={0} />
-                <Bar dataKey="building" stackId="a" fill="#FFB800" name="building" radius={0} />
-                <Bar dataKey="other"    stackId="a" fill="#2A2A3E" name="other"    radius={0} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* ── FEATURE TABLE — cyber ── */}
-        <div style={{ marginBottom: 24, border: '1px solid #3B4B3D', background: '#0A0A0F' }}>
-          {/* Table header bar */}
-          <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #3B4B3D', background: '#12121E' }}>
-            <span style={{ fontFamily: MONO, fontSize: 11, textTransform: 'uppercase', color: '#6B7280', letterSpacing: '0.08em', fontWeight: 700 }}>
-              {'// ALL_FEATURES'}
-            </span>
-            <button
-              onClick={handleExportCSV}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                background: 'none',
-                border: '1px solid #3B4B3D',
-                color: '#6B7280',
-                fontFamily: MONO,
-                fontSize: 12,
-                padding: '4px 10px',
-                cursor: 'pointer',
-                borderRadius: 0,
-                transition: 'border-color 150ms ease, color 150ms ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#00FF88';
-                e.currentTarget.style.color = '#00FF88';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = '#3B4B3D';
-                e.currentTarget.style.color = '#6B7280';
-              }}
-            >
-              <Download size={14} />
-              Export CSV
-            </button>
-          </div>
-
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ height: 32, borderBottom: '1px solid #2A2A3E' }}>
-                {([
-                  { label: 'Title',     field: 'title'    as SortField },
-                  { label: 'Status',    field: 'status'   as SortField },
-                  { label: 'Size',      field: 'size'     as SortField },
-                  { label: 'Owner',     field: null },
-                  { label: 'Quarter',   field: 'quarter'  as SortField },
-                  { label: 'Backlog %', field: 'progress' as SortField },
-                  { label: 'Jira',      field: null },
-                  { label: 'Updated',   field: null },
-                ]).map(({ label, field }) => (
-                  <th
-                    key={label}
-                    onClick={field ? () => toggleSort(field) : undefined}
-                    style={{
-                      fontFamily: MONO,
-                      fontSize: 11,
-                      textTransform: 'uppercase',
-                      color: '#6B7280',
-                      fontWeight: 700,
-                      textAlign: 'left',
-                      paddingLeft: 12,
-                      letterSpacing: '0.06em',
-                      cursor: field ? 'pointer' : 'default',
-                      userSelect: 'none',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {label}
-                    {field && (
-                      <span style={{ marginLeft: 4, color: sortField === field ? '#00FF88' : '#4B5563' }}>
-                        {sortField === field ? (sortDir === 'asc' ? '↑' : '↓') : '↕'}
-                      </span>
-                    )}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {sorted.map((f, i) => {
-                const cyberStatus = CYBER_STATUS_CONFIG[f.status] ?? CYBER_STATUS_CONFIG.IDEA;
-                const cyberSizeCol = CYBER_SIZE[f.size] ?? '#64748B';
-                return (
-                  <tr
-                    key={f.id}
-                    style={{ height: 34, borderBottom: '1px solid #2A2A3E', background: i % 2 === 1 ? '#0D0D17' : '#0A0A0F' }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,255,136,0.03)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 1 ? '#0D0D17' : '#0A0A0F'; }}
-                  >
-                    <td style={{ paddingLeft: 12, paddingRight: 8, maxWidth: 180 }}>
-                      <span style={{ fontFamily: MONO, fontSize: 12, color: '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                        {f.title}
-                      </span>
-                    </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8, whiteSpace: 'nowrap' }}>
-                      <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: cyberStatus.color, border: `1px solid ${cyberStatus.color}4D`, background: cyberStatus.bg, padding: '1px 6px', textTransform: 'uppercase' }}>
-                        {f.status}
-                      </span>
-                    </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8 }}>
-                      <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: cyberSizeCol, border: `1px solid ${cyberSizeCol}4D`, background: `${cyberSizeCol}1A`, padding: '1px 6px' }}>
-                        {f.size}
-                      </span>
-                    </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8, whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div style={{ width: 14, height: 14, borderRadius: '50%', background: ownerColor(f.owner), color: '#FFFFFF', fontSize: 7, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {ownerInitials(f.owner)}
-                        </div>
-                        <span style={{ fontFamily: MONO, fontSize: 11, color: '#6B7280' }}>{f.owner}</span>
-                      </div>
-                    </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#6B7280', whiteSpace: 'nowrap' }}>
-                      {f.quarter}
-                    </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <div style={{ width: 60, height: 4, background: '#2A2A3E', position: 'relative', flexShrink: 0 }}>
-                          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${f.progress * 100}%`, background: '#00FF88' }} />
-                        </div>
-                        <span style={{ fontFamily: MONO, fontSize: 10, color: '#6B7280', whiteSpace: 'nowrap' }}>
-                          {Math.round(f.progress * 100)}%
-                        </span>
-                      </div>
-                    </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#6B7280' }}>
-                      {f.jiraEpicId ?? '—'}
-                    </td>
-                    <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: MONO, fontSize: 11, color: '#6B7280', whiteSpace: 'nowrap' }}>
-                      {UPDATED[f.status] ?? '—'}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ── AI SIZING REPORT ── */}
-        <AISizingReport features={GANTT_FEATURES} />
-      </div>
+      <button
+        onClick={() => setActiveTab(tab)}
+        style={{
+          height: 30,
+          paddingLeft: 14,
+          paddingRight: 14,
+          fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+          fontSize: 12,
+          fontWeight: isActive ? 700 : 400,
+          color: isActive ? (isCyber ? '#00FF88' : '#2563EB') : C.meta,
+          background: isActive ? (isCyber ? 'rgba(0,255,136,0.08)' : '#EFF6FF') : 'transparent',
+          border: `1px solid ${isActive ? (isCyber ? '#00FF88' : '#2563EB') : C.cardBorder}`,
+          cursor: 'pointer',
+          transition: 'all 100ms ease',
+          letterSpacing: isCyber ? '0.05em' : 0,
+        }}
+      >
+        {label}
+      </button>
     );
   }
 
+  function sortArrow(field: SortField) {
+    if (sortField !== field) return <span style={{ marginLeft: 3, color: C.meta }}>↕</span>;
+    return <span style={{ marginLeft: 3, color: C.accent }}>{sortDir === 'asc' ? '↑' : '↓'}</span>;
+  }
+
   /* ================================================================ */
-  /*  DEFAULT RENDER                                                   */
+  /*  RENDER                                                           */
   /* ================================================================ */
   return (
     <div>
-      {/* ── TAB SWITCHER ── */}
-      <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid #E2E8F0', marginBottom: 16 }}>
-        {TABS.map(({ label, path }) => {
+
+      {/* ── Route tabs (Roadmap / Reports) ── */}
+      <div style={{ display: 'flex', gap: 24, borderBottom: `1px solid ${C.tabBorder}`, marginBottom: 16 }}>
+        {ROUTE_TABS.map(({ label, path }) => {
           const isActive = pathname === path;
           return (
             <button
@@ -422,210 +234,281 @@ export default function ReportsPage() {
               onClick={() => router.push(path)}
               style={{
                 paddingBottom: 8,
+                fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
                 fontSize: 14,
                 fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#0F172A' : '#94A3B8',
+                color: isActive ? (isCyber ? '#F0FFF4' : '#0F172A') : C.meta,
                 background: 'none',
                 border: 'none',
-                borderBottom: isActive ? '2px solid #2563EB' : '2px solid transparent',
+                borderBottom: isActive ? `2px solid ${C.accent}` : '2px solid transparent',
                 cursor: 'pointer',
-                fontFamily: 'var(--font-dm-sans)',
                 transition: 'color 100ms ease',
               }}
+              onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.color = isCyber ? '#9CA3AF' : '#64748B'; }}
+              onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = C.meta; }}
             >
-              {label}
+              {isCyber ? label.toUpperCase().replace(' ', '_') : label}
             </button>
           );
         })}
       </div>
 
-      {/* ── KPI STRIP ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 24 }}>
-        <KPICard label="Total Features"      value="24"  delta="+3 this month"     deltaType="positive" />
-        <KPICard label="In Building"         value="6"   delta="85% Jira-synced"   deltaType="positive" />
-        <KPICard label="Backlog Progress"    value="39%" delta="47 of 120 done"    deltaType="neutral"  />
-        <KPICard label="Sessions This Month" value="8"   delta="+2 vs last month"  deltaType="positive" />
-        <KPICard label="AI Size Acceptance"  value="72%" delta="18 of 25 features" deltaType="positive" />
+      {/* ── Inner tabs (Overview / Velocity) ── */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        <InnerTabBtn tab="overview" label={isCyber ? '// OVERVIEW' : 'Overview'} />
+        <InnerTabBtn tab="velocity" label={isCyber ? '// VELOCITY' : 'Velocity'} />
       </div>
 
-      {/* ── CHARTS ROW ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
-
-        {/* Status Donut */}
-        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: 16, height: 240 }}>
-          <div style={{ fontSize: 11, textTransform: 'uppercase', color: '#94A3B8', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 12, fontFamily: 'var(--font-dm-sans)' }}>
-            Feature Status
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* OVERVIEW TAB                                                 */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      {activeTab === 'overview' && (
+        <>
+          {/* ── Row 1: 5 existing KPI cards ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: 12 }}>
+            <KPICard label="Total Features"      value="24"  delta="+3 this month"     deltaType="positive" />
+            <KPICard label="In Building"         value="6"   delta="85% Jira-synced"   deltaType="positive" />
+            <KPICard label="Backlog Progress"    value="39%" delta="47 of 120 done"    deltaType="neutral"  />
+            <KPICard label="Sessions This Month" value="8"   delta="+2 vs last month"  deltaType="positive" />
+            <KPICard label="AI Size Acceptance"  value="72%" delta="18 of 25 features" deltaType="positive" />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            {/* Donut */}
-            <div style={{ position: 'relative', width: 180, height: 180, flexShrink: 0 }}>
-              <PieChart width={180} height={180}>
-                <Pie
-                  data={statusData}
-                  cx={90}
-                  cy={90}
-                  innerRadius={58}
-                  outerRadius={82}
-                  dataKey="value"
-                  startAngle={90}
-                  endAngle={-270}
-                  strokeWidth={0}
-                >
-                  {statusData.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-              </PieChart>
-              {/* Center label */}
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center', pointerEvents: 'none' }}>
-                <div style={{ fontSize: 20, fontWeight: 600, color: '#0F172A', fontFamily: 'var(--font-dm-sans)', lineHeight: 1 }}>24</div>
-                <div style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)', marginTop: 2 }}>total</div>
-              </div>
-            </div>
-            {/* Legend */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
-              {statusData.map((d) => (
-                <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 8, height: 8, background: d.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 11, color: '#475569', flex: 1, fontFamily: 'var(--font-dm-sans)' }}>{d.name}</span>
-                  <span style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>{d.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
-        {/* Quarter Progress */}
-        <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', padding: 16, height: 240 }}>
-          <div style={{ fontSize: 11, textTransform: 'uppercase', color: '#94A3B8', letterSpacing: '0.06em', fontWeight: 600, marginBottom: 12, fontFamily: 'var(--font-dm-sans)' }}>
-            Quarter Progress
+          {/* ── Row 2: 4 new session KPI cards ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+            <KPICard
+              label="Total Session Hours"
+              value={`${summary.totalSessionHours}h`}
+              delta={`across ${summary.totalSessions} sessions`}
+              deltaType="neutral"
+              accent="cyan"
+            />
+            <KPICard
+              label="Avg Session Length"
+              value={`${summary.avgSessionMinutes}min`}
+              delta="per session"
+              deltaType="neutral"
+              accent="cyan"
+            />
+            <KPICard
+              label="Auto Status Updates"
+              value={`${summary.autoStatusPct}%`}
+              delta="of changes are automatic"
+              deltaType="positive"
+              accent="purple"
+            />
+            <KPICard
+              label="Features Shipped"
+              value={`${summary.featuresDone}`}
+              delta="this quarter"
+              deltaType="positive"
+              accent="green"
+            />
           </div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={quarterData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
-              <XAxis type="number" tick={{ fontSize: 11, fontFamily: 'var(--font-dm-sans)', fill: '#94A3B8' }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="quarter" width={64} tick={{ fontSize: 11, fontFamily: 'var(--font-dm-sans)', fill: '#475569' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomBarTooltip />} />
-              <Bar dataKey="done"     stackId="a" fill="#16A34A" name="done"     radius={0} />
-              <Bar dataKey="building" stackId="a" fill="#D97706" name="building" radius={0} />
-              <Bar dataKey="other"    stackId="a" fill="#94A3B8" name="other"    radius={0} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
 
-      {/* ── FEATURE TABLE ── */}
-      <div style={{ marginBottom: 24, border: '1px solid #E2E8F0', background: '#FFFFFF' }}>
-        {/* Header */}
-        <div style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #E2E8F0' }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', fontFamily: 'var(--font-dm-sans)' }}>
-            All Features
-          </span>
-          <button
-            onClick={handleExportCSV}
+          {/* ── Row 3: SessionTimeChart | StatusDonut | AutoVsManualCard ── */}
+          <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: 'none',
-              border: '1px solid #E2E8F0',
-              color: '#475569',
-              fontSize: 12,
-              padding: '4px 10px',
-              cursor: 'pointer',
-              borderRadius: 0,
-              fontFamily: 'var(--font-dm-sans)',
+              display: 'grid',
+              gridTemplateColumns: '5fr 4fr 3fr',
+              gap: 16,
+              marginBottom: 16,
+              minHeight: 260,
             }}
           >
-            <Download size={14} />
-            Export CSV
-          </button>
-        </div>
+            <SessionTimeChart />
+            <StatusFlowSankey />
+            <AutoVsManualCard summary={summary} autoCount={autoCount} manualCount={manualCount} />
+          </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ height: 32, borderBottom: '1px solid #E2E8F0', background: '#F8FAFC' }}>
-              {([
-                { label: 'Title',     field: 'title'    as SortField },
-                { label: 'Status',    field: 'status'   as SortField },
-                { label: 'Size',      field: 'size'     as SortField },
-                { label: 'Owner',     field: null },
-                { label: 'Quarter',   field: 'quarter'  as SortField },
-                { label: 'Backlog %', field: 'progress' as SortField },
-                { label: 'Jira',      field: null },
-                { label: 'Updated',   field: null },
-              ]).map(({ label, field }) => (
-                <th
-                  key={label}
-                  onClick={field ? () => toggleSort(field) : undefined}
-                  style={{
-                    fontSize: 11, textTransform: 'uppercase', color: '#94A3B8', fontWeight: 700,
-                    textAlign: 'left', paddingLeft: 12, letterSpacing: '0.06em',
-                    cursor: field ? 'pointer' : 'default', fontFamily: 'var(--font-dm-sans)',
-                    userSelect: 'none', whiteSpace: 'nowrap',
-                  }}
-                >
-                  {label}
-                  {field && sortField === field && <span style={{ marginLeft: 4 }}>{sortDir === 'asc' ? '↑' : '↓'}</span>}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {sorted.map((f, i) => {
-              const statusCfg = STATUS_CONFIG[f.status] ?? STATUS_CONFIG.IDEA;
-              return (
-                <tr
-                  key={f.id}
-                  style={{ height: 32, borderBottom: '1px solid #F1F5F9', background: i % 2 === 1 ? '#F8FAFC' : '#FFFFFF' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#EFF6FF'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = i % 2 === 1 ? '#F8FAFC' : '#FFFFFF'; }}
-                >
-                  <td style={{ paddingLeft: 12, paddingRight: 8, maxWidth: 180 }}>
-                    <span style={{ fontSize: 13, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block', fontFamily: 'var(--font-dm-sans)' }}>
-                      {f.title}
-                    </span>
-                  </td>
-                  <td style={{ paddingLeft: 12, paddingRight: 8, whiteSpace: 'nowrap' }}>
-                    <span style={{ background: statusCfg.bg, color: statusCfg.color, fontSize: 10, fontWeight: 600, padding: '1px 6px', fontFamily: 'var(--font-dm-sans)', textTransform: 'uppercase' }}>
-                      {f.status}
-                    </span>
-                  </td>
-                  <td style={{ paddingLeft: 12, paddingRight: 8 }}>
-                    <span style={{ background: SIZE_COLORS[f.size] ?? '#94A3B8', color: '#FFFFFF', fontSize: 10, fontWeight: 600, padding: '1px 6px', fontFamily: 'var(--font-dm-sans)' }}>
-                      {f.size}
-                    </span>
-                  </td>
-                  <td style={{ paddingLeft: 12, paddingRight: 8, fontSize: 12, color: '#475569', fontFamily: 'var(--font-dm-sans)', whiteSpace: 'nowrap' }}>
-                    {f.owner}
-                  </td>
-                  <td style={{ paddingLeft: 12, paddingRight: 8, fontSize: 12, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)', whiteSpace: 'nowrap' }}>
-                    {f.quarter}
-                  </td>
-                  <td style={{ paddingLeft: 12, paddingRight: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ width: 60, height: 6, background: '#E2E8F0', position: 'relative', flexShrink: 0 }}>
-                        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${f.progress * 100}%`, background: '#16A34A' }} />
+          {/* ── Row 4: Quarter Progress + Most Active This Week ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+
+            {/* Quarter Progress */}
+            <div style={{ background: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: 6, padding: 16, height: 220 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: isCyber ? '0.1em' : '0.06em', color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontWeight: 700, marginBottom: 12 }}>
+                {isCyber ? '// QUARTER_PROGRESS' : 'Quarter Progress'}
+              </div>
+              <ResponsiveContainer width="100%" height={160}>
+                <BarChart data={quarterData} layout="vertical" margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
+                  <XAxis type="number" tick={{ fontSize: 11, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fill: C.meta }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="quarter" width={64} tick={{ fontSize: 11, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fill: isCyber ? '#6B7280' : '#475569' }} axisLine={false} tickLine={false} />
+                  <Tooltip content={isCyber ? <CyberBarTooltip /> : <DefaultBarTooltip />} cursor={{ fill: isCyber ? 'rgba(0,255,136,0.03)' : 'rgba(37,99,235,0.04)' }} />
+                  <Bar dataKey="done"     stackId="a" fill={isCyber ? '#00FF88' : '#16A34A'} name="done"     radius={0} />
+                  <Bar dataKey="building" stackId="a" fill={isCyber ? '#FFB800' : '#D97706'} name="building" radius={0} />
+                  <Bar dataKey="other"    stackId="a" fill={isCyber ? '#2A2A3E' : '#94A3B8'} name="other"    radius={0} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Most Active Features */}
+            <div style={{ background: C.cardBg, border: `1px solid ${C.cardBorder}`, borderRadius: 6, padding: 16, height: 220 }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: isCyber ? '0.1em' : '0.06em', color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontWeight: 700, marginBottom: 4 }}>
+                {isCyber ? '// MOST_ACTIVE_FEATURES' : 'Most Active Features'}
+              </div>
+              <div style={{ fontSize: 11, color: isCyber ? '#4B5563' : '#CBD5E1', fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', marginBottom: 16 }}>
+                {isCyber ? 'BY_TOTAL_SESSION_HOURS' : 'by total session hours'}
+              </div>
+
+              {topFeatures.length === 0 ? (
+                <div style={{ fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 13, color: C.meta }}>
+                  {isCyber ? '// No sessions logged yet' : 'No sessions logged yet'}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  {topFeatures.map((m) => {
+                    const feat = GANTT_FEATURES.find((f) => f.id === m.featureId);
+                    const barW = Math.max(4, Math.round((m.totalHours / maxTopHours) * 100));
+                    return (
+                      <div key={m.featureId}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                          {feat && (
+                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: ownerColor(feat.owner), color: '#FFFFFF', fontSize: 8, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              {ownerInitials(feat.owner)}
+                            </div>
+                          )}
+                          <span style={{ fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 12, color: C.body, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {m.featureTitle}
+                          </span>
+                          <span style={{ fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 11, fontWeight: 700, color: isCyber ? '#00FF88' : '#16A34A', flexShrink: 0 }}>
+                            {m.totalHours}h
+                          </span>
+                        </div>
+                        <div style={{ height: 4, background: isCyber ? '#2A2A3E' : '#F1F5F9', position: 'relative' }}>
+                          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${barW}%`, background: isCyber ? '#00FF88' : '#2563EB', transition: 'width 400ms ease' }} />
+                        </div>
                       </div>
-                      <span style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)', whiteSpace: 'nowrap' }}>
-                        {Math.round(f.progress * 100)}%
-                      </span>
-                    </div>
-                  </td>
-                  <td style={{ paddingLeft: 12, paddingRight: 8, fontSize: 11, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)' }}>
-                    {f.jiraEpicId ?? '—'}
-                  </td>
-                  <td style={{ paddingLeft: 12, paddingRight: 8, fontSize: 11, color: '#94A3B8', fontFamily: 'var(--font-dm-sans)', whiteSpace: 'nowrap' }}>
-                    {UPDATED[f.status] ?? '—'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
 
-      {/* ── AI SIZING REPORT ── */}
-      <AISizingReport features={GANTT_FEATURES} />
+          {/* ── Row 5: Roadmap feature table ── */}
+          <div style={{ marginBottom: 20, border: `1px solid ${C.cardBorder}`, background: C.tableBg }}>
+            <div style={{ padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: `1px solid ${C.cardBorder}`, background: C.headerBg }}>
+              <span style={{ fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: isCyber ? 11 : 13, fontWeight: 700, color: isCyber ? '#6B7280' : '#0F172A', textTransform: isCyber ? 'uppercase' : 'none', letterSpacing: isCyber ? '0.08em' : 0 }}>
+                {isCyber ? '// ALL_FEATURES' : 'All Features'}
+              </span>
+              <button
+                onClick={handleExportCSV}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: `1px solid ${C.cardBorder}`, color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 12, padding: '4px 10px', cursor: 'pointer', borderRadius: 0, transition: 'border-color 150ms ease, color 150ms ease' }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = C.accent; e.currentTarget.style.color = C.accent; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.cardBorder; e.currentTarget.style.color = C.meta; }}
+              >
+                <Download size={14} />
+                Export CSV
+              </button>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ height: 32, borderBottom: `1px solid ${isCyber ? '#2A2A3E' : '#E2E8F0'}`, background: C.headerBg }}>
+                  {([
+                    { label: 'Title',     field: 'title'    as SortField },
+                    { label: 'Status',    field: 'status'   as SortField },
+                    { label: 'Size',      field: 'size'     as SortField },
+                    { label: 'Owner',     field: null },
+                    { label: 'Quarter',   field: 'quarter'  as SortField },
+                    { label: 'Backlog %', field: 'progress' as SortField },
+                    { label: 'Jira',      field: null },
+                    { label: 'Updated',   field: null },
+                  ] as { label: string; field: SortField | null }[]).map(({ label, field }) => (
+                    <th
+                      key={label}
+                      onClick={field ? () => toggleSort(field) : undefined}
+                      style={{ fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 10, textTransform: 'uppercase', color: C.meta, fontWeight: 700, textAlign: 'left', paddingLeft: 12, letterSpacing: '0.06em', cursor: field ? 'pointer' : 'default', userSelect: 'none', whiteSpace: 'nowrap' }}
+                    >
+                      {label}{field ? sortArrow(field) : null}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sorted.map((f, i) => {
+                  const statusCfg   = STATUS_CONFIG[f.status] ?? STATUS_CONFIG.IDEA;
+                  const cyberStatus = CYBER_STATUS_CONFIG[f.status] ?? CYBER_STATUS_CONFIG.IDEA;
+                  const rowBg       = i % 2 === 1 ? C.tableAlt : C.tableBg;
+                  return (
+                    <tr
+                      key={f.id}
+                      style={{ height: 34, borderBottom: `1px solid ${isCyber ? '#2A2A3E' : '#F1F5F9'}`, background: rowBg }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = C.tableHover; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = rowBg; }}
+                    >
+                      <td style={{ paddingLeft: 12, paddingRight: 8, maxWidth: 180 }}>
+                        <span style={{ fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 12, color: C.body, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>{f.title}</span>
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 8, whiteSpace: 'nowrap' }}>
+                        {isCyber ? (
+                          <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: cyberStatus.color, border: `1px solid ${cyberStatus.color}4D`, background: cyberStatus.bg, padding: '1px 6px', textTransform: 'uppercase' }}>{f.status}</span>
+                        ) : (
+                          <span style={{ background: statusCfg.bg, color: statusCfg.color, fontSize: 10, fontWeight: 600, padding: '1px 6px', fontFamily: 'var(--font-dm-sans)', textTransform: 'uppercase' }}>{f.status}</span>
+                        )}
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 8 }}>
+                        {isCyber ? (
+                          <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: CYBER_SIZE[f.size] ?? '#64748B', border: `1px solid ${CYBER_SIZE[f.size] ?? '#64748B'}4D`, background: `${CYBER_SIZE[f.size] ?? '#64748B'}1A`, padding: '1px 6px' }}>{f.size}</span>
+                        ) : (
+                          <span style={{ background: SIZE_COLORS[f.size] ?? '#94A3B8', color: '#FFFFFF', fontSize: 10, fontWeight: 600, padding: '1px 6px', fontFamily: 'var(--font-dm-sans)' }}>{f.size}</span>
+                        )}
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 8, whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: 14, height: 14, borderRadius: '50%', background: ownerColor(f.owner), color: '#FFFFFF', fontSize: 7, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {ownerInitials(f.owner)}
+                          </div>
+                          <span style={{ fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 11, color: C.meta }}>{f.owner}</span>
+                        </div>
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 11, color: C.meta, whiteSpace: 'nowrap' }}>{f.quarter}</td>
+                      <td style={{ paddingLeft: 12, paddingRight: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: 60, height: isCyber ? 4 : 6, background: isCyber ? '#2A2A3E' : '#E2E8F0', position: 'relative', flexShrink: 0 }}>
+                            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${f.progress * 100}%`, background: isCyber ? '#00FF88' : '#16A34A' }} />
+                          </div>
+                          <span style={{ fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 10, color: C.meta, whiteSpace: 'nowrap' }}>{Math.round(f.progress * 100)}%</span>
+                        </div>
+                      </td>
+                      <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 11, color: C.meta }}>{f.jiraEpicId ?? '—'}</td>
+                      <td style={{ paddingLeft: 12, paddingRight: 8, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)', fontSize: 11, color: C.meta, whiteSpace: 'nowrap' }}>{UPDATED[f.status] ?? '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── Row 6: AI Sizing Report ── */}
+          <AISizingReport features={GANTT_FEATURES} />
+        </>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════ */}
+      {/* VELOCITY TAB                                                 */}
+      {/* ════════════════════════════════════════════════════════════ */}
+      {activeTab === 'velocity' && (
+        <>
+          {/* ── Row 1: 4 velocity stage KPI cards ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+            <KPICard label="Avg hrs to Scoping"    value="2.5h" delta="from idea to scoped"        deltaType="neutral" accent="cyan"   />
+            <KPICard label="Avg hrs to Prototype"  value="8h"   delta="from scoping to prototype"  deltaType="neutral" accent="cyan"   />
+            <KPICard label="Avg hrs to Building"   value="18h"  delta="from prototype to in build" deltaType="neutral" accent="purple" />
+            <KPICard label="Avg hrs to Done"       value="42h"  delta="full feature lifecycle"     deltaType="positive" accent="green" />
+          </div>
+
+          {/* ── Row 2: Feature Velocity Table ── */}
+          <div style={{ marginBottom: 20 }}>
+            <FeatureVelocityTable metrics={metrics} />
+          </div>
+
+          {/* ── Row 3: Session time chart ── */}
+          <div style={{ height: 260 }}>
+            <SessionTimeChart />
+          </div>
+        </>
+      )}
+
     </div>
   );
 }

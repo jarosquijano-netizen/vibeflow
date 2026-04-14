@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
+type AccentType = 'green' | 'cyan' | 'purple' | 'default';
+
 interface KPICardProps {
   label: string;
   value: string;
   delta: string;
   deltaType: 'positive' | 'negative' | 'neutral';
+  accent?: AccentType;
 }
 
 const DELTA_COLORS = {
@@ -22,18 +25,43 @@ const CYBER_DELTA_COLORS = {
   neutral:  '#6B7280',
 };
 
-const CYBER_ACCENT = {
+/* Top border accent color per accent type */
+const ACCENT_BORDER: Record<AccentType, { default: string; cyber: string }> = {
+  green:   { default: '#16A34A', cyber: '#00FF88' },
+  cyan:    { default: '#0EA5E9', cyber: '#00D4FF' },
+  purple:  { default: '#7C3AED', cyber: '#BF00FF' },
+  default: { default: '', cyber: '' }, // fallback to deltaType
+};
+
+/* Fallback top-border by deltaType */
+const CYBER_ACCENT: Record<string, string> = {
   positive: '#00FF88',
   negative: '#FF4444',
   neutral:  '#3B4B3D',
 };
+const DEFAULT_ACCENT: Record<string, string> = {
+  positive: '#16A34A',
+  negative: '#DC2626',
+  neutral:  '#E2E8F0',
+};
 
 const MONO = "'JetBrains Mono', monospace";
 
-export default function KPICard({ label, value, delta, deltaType }: KPICardProps) {
+export default function KPICard({
+  label,
+  value,
+  delta,
+  deltaType,
+  accent = 'default',
+}: KPICardProps) {
   const { theme } = useTheme();
   const isCyber = theme === 'cyber';
   const [hovered, setHovered] = useState(false);
+
+  const accentCfg = ACCENT_BORDER[accent];
+  const topColor = isCyber
+    ? (accentCfg.cyber || CYBER_ACCENT[deltaType])
+    : (accentCfg.default || DEFAULT_ACCENT[deltaType]);
 
   if (isCyber) {
     return (
@@ -42,7 +70,7 @@ export default function KPICard({ label, value, delta, deltaType }: KPICardProps
         onMouseLeave={() => setHovered(false)}
         style={{
           background: '#111118',
-          borderTop: `3px solid ${CYBER_ACCENT[deltaType]}`,
+          borderTop: `3px solid ${topColor}`,
           borderRight: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#3B4B3D'}`,
           borderBottom: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#3B4B3D'}`,
           borderLeft: `1px solid ${hovered ? 'rgba(0,255,136,0.3)' : '#3B4B3D'}`,
@@ -51,7 +79,7 @@ export default function KPICard({ label, value, delta, deltaType }: KPICardProps
           display: 'flex',
           flexDirection: 'column',
           gap: 4,
-          boxShadow: hovered ? '0 0 16px rgba(0,255,136,0.05)' : 'none',
+          boxShadow: hovered ? `0 0 16px ${topColor}12` : 'none',
           transition: 'border-color 150ms ease, box-shadow 150ms ease',
         }}
       >
@@ -94,6 +122,7 @@ export default function KPICard({ label, value, delta, deltaType }: KPICardProps
     <div
       style={{
         background: '#FFFFFF',
+        borderTop: `3px solid ${topColor || '#E2E8F0'}`,
         border: '1px solid #E2E8F0',
         padding: 16,
         display: 'flex',
