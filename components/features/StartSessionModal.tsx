@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import { X, Zap } from 'lucide-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { saveActiveSession } from '@/lib/feature-store';
+import { getAllSessions } from '@/lib/session-store';
 import { dispatchXPEvent } from '@/lib/xp-engine';
+import { vibeToast } from '@/components/polish/toasts';
 import type { Feature, VibeSession } from '@/types';
 
 const MONO = "'JetBrains Mono', monospace";
@@ -66,6 +68,19 @@ export default function StartSessionModal({ feature, onStart, onClose }: Props) 
 
   function handleConfirm() {
     if (!feature) return;
+
+    // Bug 5: Prevent duplicate open sessions for the same feature
+    const allSessions = getAllSessions();
+    const existingOpen = allSessions.find(
+      (s) => s.linkedFeatureIds.includes(feature.id) && s.status === 'OPEN'
+    );
+    if (existingOpen) {
+      vibeToast.info('Continuing existing session for this feature');
+      onClose();
+      router.push(`/dashboard/sessions?session=${existingOpen.id}`);
+      return;
+    }
+
     const now = new Date();
     const sessionId = `session-${Date.now()}`;
     const today = now.toISOString().slice(0, 10);

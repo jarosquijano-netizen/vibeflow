@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { VibeSession } from '@/types';
-import { getActiveSessions, saveActiveSession } from '@/lib/feature-store';
+import { saveActiveSession } from '@/lib/feature-store';
+import { getAllSessions } from '@/lib/session-store';
 import SessionList from './SessionList';
 import SessionDetail from './SessionDetail';
 
@@ -253,25 +254,14 @@ export default function VibeSessions() {
   const [sessions, setSessions] = useState<VibeSession[]>(SAMPLE_SESSIONS);
   const [selectedId, setSelectedId] = useState<string | null>('s1');
 
-  /* Merge localStorage sessions on mount and handle URL param */
+  /* Load all sessions (localStorage + sample) on mount and handle URL param */
   useEffect(() => {
-    const active = getActiveSessions();
-    if (active.length > 0) {
-      setSessions((prev) => {
-        const existingIds = new Set(prev.map((s) => s.id));
-        const newOnes = active.filter((s) => !existingIds.has(s.id));
-        return newOnes.length > 0 ? [...newOnes, ...prev] : prev;
-      });
-    }
+    const all = getAllSessions();
+    setSessions(all);
 
     if (sessionParam) {
-      // Find in active sessions or sample
-      const found = active.find((s) => s.id === sessionParam);
+      const found = all.find((s) => s.id === sessionParam);
       if (found) {
-        setSessions((prev) => {
-          const existingIds = new Set(prev.map((s) => s.id));
-          return existingIds.has(found.id) ? prev : [found, ...prev];
-        });
         setSelectedId(sessionParam);
       }
     }

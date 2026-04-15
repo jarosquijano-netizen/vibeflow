@@ -7,6 +7,15 @@ export interface DetectedStatus {
   xpBonus: number;
 }
 
+const STATUS_ORDER = ['IDEA', 'SCOPING', 'PROTOTYPING', 'BUILDING', 'DONE'] as const;
+
+/** True if moving from current → target is a forward advancement (never backward). */
+function canAdvanceTo(current: string, target: string): boolean {
+  const ci = STATUS_ORDER.indexOf(current as typeof STATUS_ORDER[number]);
+  const ti = STATUS_ORDER.indexOf(target as typeof STATUS_ORDER[number]);
+  return ti > ci;
+}
+
 export function detectFeatureStatus(
   session: VibeSession,
   currentFeatureStatus: string
@@ -15,31 +24,67 @@ export function detectFeatureStatus(
   const totalTasks = tasks.length;
   const doneTasks = tasks.filter((t) => t.status === 'DONE').length;
   const inProgressTasks = tasks.filter((t) => t.status === 'IN_PROGRESS').length;
-  const hasPrototype = !!session.prototypeUrl;
-  const hasGoal = session.goal && session.goal.length > 20;
-  const hasNotes = session.notes?.worked?.length > 10;
 
-  void hasNotes; // used for future scoring
+  // Prototype requires a real URL (not just any string)
+  const hasPrototype =
+    typeof session.prototypeUrl === 'string' &&
+    session.prototypeUrl.startsWith('http');
 
-  // All tasks done + prototype = BUILDING or DONE
-  if (totalTasks > 0 && doneTasks === totalTasks && hasPrototype) {
-    if (currentFeatureStatus === 'BUILDING') {
-      return {
-        status: 'DONE',
-        confidence: 'HIGH',
-        reason: 'All tasks complete and prototype delivered.',
-        xpBonus: 200,
-      };
-    }
+  const hasGoal = typeof session.goal === 'string' && session.goal.length > 20;
+
+  // Notes: check across all session days OR the root notes field
+  const notesWorked =
+    session.notes?.worked ??
+    session.sessions?.reduce((acc, d) => acc + (d.notesWorked ?? ''), '') ??
+    '';
+  const hasNotes = notesWorked.length > 10;
+
+  // ── DONE: strictest gate — ALL conditions required ──────────────────────
+  // Must currently be BUILDING, have a real prototype, all tasks done, and
+  // notes written. This prevents accidentally jumping to DONE.
+  if (
+    currentFeatureStatus === 'BUILDING' &&
+    hasPrototype &&
+    totalTasks > 0 &&
+    doneTasks === totalTasks &&
+    hasNotes
+  ) {
     return {
-      status: 'BUILDING',
+      status: 'DONE',
       confidence: 'HIGH',
-      reason: 'All tasks done and prototype available.',
-      xpBonus: 150,
+      reason: 'All tasks complete, prototype delivered, and notes captured.',
+      xpBonus: 200,
     };
   }
 
-  // Prototype exists = PROTOTYPING (from SCOPING)
+  // ── BUILDING: prototype + tasks in progress ──────────────────────────────
+  if (
+    hasPrototype &&
+    inProgressTasks > 0 &&
+    canAdvanceTo(currentFeatureStatus, 'BUILDING')
+  ) {
+    return {
+      status: 'BUILDING',
+      confidence: 'HIGH',
+      reason: 'Active tasks and prototype in progress.',
+      xpBonus: 100,
+    };
+  }
+
+  // ── BUILDING: tasks actively in progress (no prototype required) ─────────
+  if (
+    (inProgressTasks > 0 || (doneTasks > 0 && doneTasks < totalTasks)) &&
+    canAdvanceTo(currentFeatureStatus, 'BUILDING')
+  ) {
+    return {
+      status: 'BUILDING',
+      confidence: 'MEDIUM',
+      reason: 'Tasks are actively being worked on.',
+      xpBonus: 75,
+    };
+  }
+
+  // ── PROTOTYPING: prototype URL added while in SCOPING ────────────────────
   if (hasPrototype && currentFeatureStatus === 'SCOPING') {
     return {
       status: 'PROTOTYPING',
@@ -49,28 +94,13 @@ export function detectFeatureStatus(
     };
   }
 
-  // Prototype + tasks in progress = BUILDING
-  if (hasPrototype && inProgressTasks > 0) {
-    return {
-      status: 'BUILDING',
-      confidence: 'HIGH',
-      reason: 'Active tasks and prototype in progress.',
-      xpBonus: 100,
-    };
-  }
-
-  // Tasks in progress = BUILDING
-  if (inProgressTasks > 0 || (doneTasks > 0 && doneTasks < totalTasks)) {
-    return {
-      status: 'BUILDING',
-      confidence: 'MEDIUM',
-      reason: 'Tasks are actively being worked on.',
-      xpBonus: 75,
-    };
-  }
-
-  // Tasks defined but none started = SCOPING
-  if (totalTasks > 0 && doneTasks === 0 && inProgressTasks === 0) {
+  // ── SCOPING: tasks defined but none started ──────────────────────────────
+  if (
+    totalTasks > 0 &&
+    doneTasks === 0 &&
+    inProgressTasks === 0 &&
+    canAdvanceTo(currentFeatureStatus, 'SCOPING')
+  ) {
     return {
       status: 'SCOPING',
       confidence: 'MEDIUM',
@@ -79,8 +109,12 @@ export function detectFeatureStatus(
     };
   }
 
-  // Goal written but no tasks = SCOPING
-  if (hasGoal && totalTasks === 0) {
+  // ── SCOPING: goal written, no tasks ─────────────────────────────────────
+  if (
+    hasGoal &&
+    totalTasks === 0 &&
+    canAdvanceTo(currentFeatureStatus, 'SCOPING')
+  ) {
     return {
       status: 'SCOPING',
       confidence: 'LOW',
@@ -89,15 +123,12 @@ export function detectFeatureStatus(
     };
   }
 
-  // Fallback: advance one step
-  const STATUS_ORDER = ['IDEA', 'SCOPING', 'PROTOTYPING', 'BUILDING', 'DONE'];
-  const currentIdx = STATUS_ORDER.indexOf(currentFeatureStatus);
-  const nextStatus = STATUS_ORDER[Math.min(currentIdx + 1, STATUS_ORDER.length - 1)];
-
+  // ── Fallback: stay on current status ────────────────────────────────────
+  // Never blindly advance — require actual evidence of progress.
   return {
-    status: nextStatus,
+    status: currentFeatureStatus,
     confidence: 'LOW',
-    reason: 'Moving to next stage based on session completion.',
+    reason: 'Not enough session activity to advance status automatically.',
     xpBonus: 0,
   };
 }

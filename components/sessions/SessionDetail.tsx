@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Zap, CheckSquare } from 'lucide-react';
 import type { VibeSession, BacklogItem, Feature, SessionDay } from '@/types';
 import BacklogItemRow from './BacklogItemRow';
 import { vibeToast } from '@/components/polish/toasts';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { detectFeatureStatus, type DetectedStatus } from '@/lib/status-detector';
-import { getPromotedFeatures, updateFeatureStatus } from '@/lib/feature-store';
+import { getFeatureById, updateFeatureStatus } from '@/lib/session-store';
+import { getPromotedFeatures } from '@/lib/feature-store';
 import { getFeatureRewards, type FeatureReward, type TShirtSize } from '@/lib/feature-rewards';
 import FeatureCompletionCelebration from '../features/FeatureCompletionCelebration';
 import { dispatchXPEvent } from '@/lib/xp-engine';
@@ -205,13 +206,23 @@ function SessionDetailInner({
     featureSize: Feature['size'];
     detected: DetectedStatus | null;
     selectedStatus: string;
-  }>({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA' });
+    currentFeatureStatus: string;
+  }>({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA', currentFeatureStatus: 'IDEA' });
   const [celebrationFeature, setCelebrationFeature] = useState<Feature | null>(null);
   const [celebrationReward, setCelebrationReward] = useState<FeatureReward | null>(null);
   /* Multi-day state */
   const [sessionTimer, setSessionTimer] = useState(0); // minutes since this component mounted
   const [daysExpanded, setDaysExpanded] = useState(true);
   const [statusHistoryOpen, setStatusHistoryOpen] = useState(false);
+
+  /* ── Compute total time from actual SessionDay records ── */
+  const realTotalMinutes = useMemo(() => {
+    const daysTotal = (session.sessions ?? []).reduce(
+      (sum, d) => sum + (d.minutesLogged ?? 0),
+      0
+    );
+    return Math.max(daysTotal, session.totalMinutes ?? 0);
+  }, [session]);
 
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -371,28 +382,22 @@ function SessionDetailInner({
   function getLinkedFeature(): { id: string; title: string; status: string; size: Feature['size'] } | null {
     const featureId = session.linkedFeatureIds?.[0];
     if (!featureId) return null;
-    try {
-      const overrides: Record<string, string> = JSON.parse(
-        localStorage.getItem('vibeflow-status-overrides') || '{}'
-      );
-      // Check promoted features first (may contain both promoted + updated sample features)
-      const promoted: Feature[] = JSON.parse(
-        localStorage.getItem('vibeflow-promoted-features') || '[]'
-      );
-      const promotedFeature = promoted.find((f) => f.id === featureId);
-      if (promotedFeature) {
-        return { id: featureId, title: promotedFeature.title, size: promotedFeature.size ?? null, status: overrides[featureId] ?? promotedFeature.status };
-      }
-      // Fall back to inline lookup (covers SAMPLE_FEATURES)
-      const lookup = FEATURES_LOOKUP[featureId];
-      if (lookup) {
+    // Use session-store which checks promoted → sample → overrides
+    const feat = getFeatureById(featureId);
+    if (feat) return { id: feat.id, title: feat.title, status: feat.status, size: feat.size };
+    // Fallback to inline lookup for sessions with legacy IDs (f1, f4, etc.)
+    const lookup = FEATURES_LOOKUP[featureId];
+    if (lookup) {
+      try {
+        const overrides: Record<string, string> = JSON.parse(
+          localStorage.getItem('vibeflow-status-overrides') || '{}'
+        );
         return { id: featureId, title: lookup.title, size: lookup.size as Feature['size'], status: overrides[featureId] ?? lookup.status };
+      } catch {
+        return { id: featureId, title: lookup.title, size: lookup.size as Feature['size'], status: lookup.status };
       }
-      return null;
-    } catch {
-      const lookup = FEATURES_LOOKUP[featureId];
-      return lookup ? { id: featureId, title: lookup.title, size: lookup.size as Feature['size'], status: lookup.status } : null;
     }
+    return null;
   }
 
   function handleCloseSession() {
@@ -407,6 +412,7 @@ function SessionDetailInner({
         featureSize: currentFeature?.size ?? null,
         detected,
         selectedStatus: detected.status,
+        currentFeatureStatus: currentFeature?.status ?? 'IDEA',
       });
     } else {
       save({ status: 'CLOSED', ...finalizeCurrentDay() }, 'closed');
@@ -468,14 +474,19 @@ function SessionDetailInner({
       }
     }
 
-    setCloseModal({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA' });
-    vibeToast.success(`Session closed · Feature advanced to ${selectedStatus}`);
+    setCloseModal({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA', currentFeatureStatus: 'IDEA' });
+    const isAdvancing = selectedStatus !== closeModal.currentFeatureStatus;
+    if (isAdvancing) {
+      vibeToast.success(`Session closed · Feature advanced to ${selectedStatus}`);
+    } else {
+      vibeToast.info('Session closed · Status unchanged');
+    }
     if (isCyber) vibeToast.ai(`✦ ${detected?.reason ?? 'Session complete'}`);
   }
 
   function handleCloseWithoutAdvancing() {
     save({ status: 'CLOSED', ...finalizeCurrentDay() }, 'closed');
-    setCloseModal({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA' });
+    setCloseModal({ open: false, featureId: null, featureTitle: '', featureSize: null, detected: null, selectedStatus: 'IDEA', currentFeatureStatus: 'IDEA' });
     vibeToast.info('Session closed');
   }
 
@@ -633,9 +644,11 @@ function SessionDetailInner({
           </span>
 
           {/* Total time */}
-          {(session.totalMinutes ?? 0) > 0 && (
+          {realTotalMinutes > 0 && (
             <span style={{ fontSize: 12, color: C.meta, fontFamily: isCyber ? MONO : 'var(--font-dm-sans)' }}>
-              {isCyber ? `${Math.floor((session.totalMinutes ?? 0) / 60)}H${(session.totalMinutes ?? 0) % 60 > 0 ? `${(session.totalMinutes ?? 0) % 60}M` : ''}_TOTAL` : `${Math.floor((session.totalMinutes ?? 0) / 60)}h ${(session.totalMinutes ?? 0) % 60 > 0 ? `${(session.totalMinutes ?? 0) % 60}m` : ''} total`}
+              {isCyber
+                ? `${Math.floor(realTotalMinutes / 60)}H${realTotalMinutes % 60 > 0 ? `${realTotalMinutes % 60}M` : ''}_TOTAL`
+                : `${Math.floor(realTotalMinutes / 60)}h ${realTotalMinutes % 60 > 0 ? `${realTotalMinutes % 60}m` : ''} total`}
             </span>
           )}
 
@@ -1094,9 +1107,12 @@ function SessionDetailInner({
                   const isCurrentDay = idx === session.sessions!.length - 1 && !isClosed;
                   const durationHrs = Math.floor(day.minutesLogged / 60);
                   const durationMins = day.minutesLogged % 60;
-                  const durationLabel = durationHrs > 0
-                    ? `${durationHrs}h${durationMins > 0 ? ` ${durationMins}m` : ''}`
-                    : `${durationMins}m`;
+                  const durationLabel =
+                    isCurrentDay && day.minutesLogged === 0
+                      ? (isCyber ? '● ACTIVE' : '● Active')
+                      : durationHrs > 0
+                        ? `${durationHrs}h${durationMins > 0 ? ` ${durationMins}m` : ''}`
+                        : `${durationMins}m`;
                   return (
                     <div
                       key={day.id}
@@ -1811,6 +1827,19 @@ function SessionDetailInner({
                 >
                   {closeModal.detected.reason}
                 </div>
+                {closeModal.detected.status === closeModal.currentFeatureStatus && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                      fontSize: 11,
+                      color: isCyber ? '#FFB800' : '#D97706',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {isCyber ? '⚠ STATUS_UNCHANGED — need more evidence to advance' : '⚠ STATUS_UNCHANGED — more evidence needed to advance'}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1918,50 +1947,59 @@ function SessionDetailInner({
             })()}
 
             {/* Footer */}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button
-                onClick={handleCloseAndAdvance}
-                style={{
-                  flex: 1,
-                  height: 40,
-                  background: isCyber ? '#00FF88' : '#2563EB',
-                  color: isCyber ? '#000000' : '#FFFFFF',
-                  border: 'none',
-                  borderRadius: 4,
-                  fontFamily: isCyber ? "'Space Grotesk', sans-serif" : 'var(--font-dm-sans)',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.05em',
-                  cursor: 'pointer',
-                  transition: 'box-shadow 150ms ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = isCyber
-                    ? '0 0 16px rgba(0,255,136,0.4)'
-                    : '0 4px 12px rgba(37,99,235,0.3)';
-                }}
-                onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
-              >
-                {isCyber ? 'CLOSE_AND_ADVANCE' : 'Close & Advance'}
-              </button>
-              <button
-                onClick={handleCloseWithoutAdvancing}
-                style={{
-                  height: 40,
-                  padding: '0 16px',
-                  background: 'none',
-                  border: `1px solid ${isCyber ? '#3B4B3D' : '#E2E8F0'}`,
-                  borderRadius: 4,
-                  fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
-                  fontSize: 12,
-                  color: isCyber ? '#6B7280' : '#64748B',
-                  cursor: 'pointer',
-                }}
-              >
-                {isCyber ? 'NO_ADVANCE' : 'Close Without Advancing'}
-              </button>
-            </div>
+            {(() => {
+              const isAdvancing = closeModal.selectedStatus !== closeModal.currentFeatureStatus;
+              return (
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button
+                    onClick={handleCloseAndAdvance}
+                    style={{
+                      flex: 1,
+                      height: 40,
+                      background: isCyber ? '#00FF88' : '#2563EB',
+                      color: isCyber ? '#000000' : '#FFFFFF',
+                      border: 'none',
+                      borderRadius: 4,
+                      fontFamily: isCyber ? "'Space Grotesk', sans-serif" : 'var(--font-dm-sans)',
+                      fontWeight: 700,
+                      fontSize: 13,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      cursor: 'pointer',
+                      transition: 'box-shadow 150ms ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.boxShadow = isCyber
+                        ? '0 0 16px rgba(0,255,136,0.4)'
+                        : '0 4px 12px rgba(37,99,235,0.3)';
+                    }}
+                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    {isAdvancing
+                      ? (isCyber ? 'CLOSE_AND_ADVANCE' : 'Close & Advance')
+                      : (isCyber ? 'CLOSE_SESSION' : 'Close Session')}
+                  </button>
+                  {isAdvancing && (
+                    <button
+                      onClick={handleCloseWithoutAdvancing}
+                      style={{
+                        height: 40,
+                        padding: '0 16px',
+                        background: 'none',
+                        border: `1px solid ${isCyber ? '#3B4B3D' : '#E2E8F0'}`,
+                        borderRadius: 4,
+                        fontFamily: isCyber ? MONO : 'var(--font-dm-sans)',
+                        fontSize: 12,
+                        color: isCyber ? '#6B7280' : '#64748B',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {isCyber ? 'NO_ADVANCE' : 'Close Without Advancing'}
+                    </button>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}

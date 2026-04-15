@@ -22,7 +22,8 @@ import FeatureCompletionCelebration from './FeatureCompletionCelebration';
 import { getFeatureRewards, type FeatureReward, type TShirtSize } from '@/lib/feature-rewards';
 import { dispatchXPEvent } from '@/lib/xp-engine';
 import { vibeToast } from '@/components/polish/toasts';
-import { getPromotedFeatures, updateFeatureStatus, getStatusOverrides, saveStatusOverride } from '@/lib/feature-store';
+import { getPromotedFeatures, getStatusOverrides } from '@/lib/feature-store';
+import { updateFeatureStatus } from '@/lib/session-store';
 
 /* ------------------------------------------------------------------ */
 /*  Sample data                                                         */
@@ -204,7 +205,7 @@ export default function FeatureBoard() {
         setFeatures((prev) =>
           prev.map((f) => f.id === activeFeatureId ? { ...f, status: newStatus } : f)
         );
-        saveStatusOverride(activeFeatureId, newStatus);
+        updateFeatureStatus(activeFeatureId, newStatus);
         if (dragged && newStatus === 'DONE' && dragged.status !== 'DONE') {
           triggerCelebration(dragged, newStatus);
         }
@@ -222,7 +223,7 @@ export default function FeatureBoard() {
           f.id === activeFeatureId ? { ...f, status: overFeature.status } : f
         );
       });
-      saveStatusOverride(activeFeatureId, overFeature.status);
+      updateFeatureStatus(activeFeatureId, overFeature.status);
       if (dragged && overFeature.status === 'DONE' && dragged.status !== 'DONE') {
         triggerCelebration(dragged, overFeature.status);
       }
