@@ -117,6 +117,11 @@ export default function FeatureBoard() {
 
   /* ── Sync: storage events (cross-tab) + custom events (same-tab) ── */
   useEffect(() => {
+    // On mount (client-only): hydrate from localStorage.
+    // This corrects the SSR case where useState(getInitialFeatures) ran
+    // server-side without window access and produced only SAMPLE_FEATURES.
+    setFeatures(getInitialFeatures());
+
     // Cross-tab: re-build state when localStorage changes
     function handleStorage(e: StorageEvent) {
       if (
