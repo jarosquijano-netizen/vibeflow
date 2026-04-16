@@ -77,7 +77,9 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
         onClick={!isDragging ? onClick : undefined}
         style={{
           background: '#16161E',
-          border: `1px solid ${isDragging ? '#00FF88' : '#3B4B3D'}`,
+          borderTop: `1px solid ${isDragging ? '#00FF88' : '#3B4B3D'}`,
+          borderRight: `1px solid ${isDragging ? '#00FF88' : '#3B4B3D'}`,
+          borderBottom: `1px solid ${isDragging ? '#00FF88' : '#3B4B3D'}`,
           borderLeft: `3px solid ${isDragging ? '#00FF88' : cyberCfg.color}`,
           borderRadius: 6,
           padding: 12,
@@ -91,7 +93,9 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
         onMouseEnter={(e) => {
           if (isDragging) return;
           const el = e.currentTarget;
-          el.style.borderColor = cyberCfg.color;
+          el.style.borderTopColor = cyberCfg.color;
+          el.style.borderRightColor = cyberCfg.color;
+          el.style.borderBottomColor = cyberCfg.color;
           el.style.borderLeftColor = cyberCfg.color;
           el.style.boxShadow = `0 0 16px ${cyberCfg.glow}`;
           el.style.transform = 'translateY(-1px)';
@@ -99,7 +103,9 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
         onMouseLeave={(e) => {
           if (isDragging) return;
           const el = e.currentTarget;
-          el.style.borderColor = '#3B4B3D';
+          el.style.borderTopColor = '#3B4B3D';
+          el.style.borderRightColor = '#3B4B3D';
+          el.style.borderBottomColor = '#3B4B3D';
           el.style.borderLeftColor = cyberCfg.color;
           el.style.boxShadow = 'none';
           el.style.transform = 'none';
@@ -239,7 +245,9 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
       onClick={!isDragging ? onClick : undefined}
       style={{
         background: '#FFFFFF',
-        border: '1px solid #E2E8F0',
+        borderTop: '1px solid #E2E8F0',
+        borderRight: '1px solid #E2E8F0',
+        borderBottom: '1px solid #E2E8F0',
         borderLeft: `3px solid ${statusColor}`,
         padding: 12,
         cursor: isDragging ? 'grabbing' : 'grab',
@@ -252,7 +260,9 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
       onMouseEnter={(e) => {
         if (isDragging) return;
         const el = e.currentTarget;
-        el.style.borderColor = '#2563EB';
+        el.style.borderTopColor = '#2563EB';
+        el.style.borderRightColor = '#2563EB';
+        el.style.borderBottomColor = '#2563EB';
         el.style.borderLeftColor = statusColor;
         el.style.transform = 'translateY(-1px)';
         el.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
@@ -260,7 +270,9 @@ export default function FeatureCard({ feature, isDragging = false, onClick }: Fe
       onMouseLeave={(e) => {
         if (isDragging) return;
         const el = e.currentTarget;
-        el.style.borderColor = '#E2E8F0';
+        el.style.borderTopColor = '#E2E8F0';
+        el.style.borderRightColor = '#E2E8F0';
+        el.style.borderBottomColor = '#E2E8F0';
         el.style.borderLeftColor = statusColor;
         el.style.transform = 'none';
         el.style.boxShadow = 'none';

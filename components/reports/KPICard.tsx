@@ -123,7 +123,9 @@ export default function KPICard({
       style={{
         background: '#FFFFFF',
         borderTop: `3px solid ${topColor || '#E2E8F0'}`,
-        border: '1px solid #E2E8F0',
+        borderRight: '1px solid #E2E8F0',
+        borderBottom: '1px solid #E2E8F0',
+        borderLeft: '1px solid #E2E8F0',
         padding: 16,
         display: 'flex',
         flexDirection: 'column',

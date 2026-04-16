@@ -112,10 +112,10 @@ export const INITIAL_XP_STATE: XPState = {
   xpToNextLevel: 550,
   streak: 7,
   events: [
-    { id: '1', label: 'Goal written',       amount: 50,  timestamp: Date.now() - 5000  },
-    { id: '2', label: 'Prototype added',    amount: 100, timestamp: Date.now() - 12000 },
-    { id: '3', label: 'Sprint milestone',   amount: 200, timestamp: Date.now() - 30000 },
-    { id: '4', label: 'Prototype rendered', amount: 100, timestamp: Date.now() - 60000 },
+    { id: '1', label: 'Goal written',       amount: 50,  timestamp: 0 },
+    { id: '2', label: 'Prototype added',    amount: 100, timestamp: 0 },
+    { id: '3', label: 'Sprint milestone',   amount: 200, timestamp: 0 },
+    { id: '4', label: 'Prototype rendered', amount: 100, timestamp: 0 },
   ],
 };
 

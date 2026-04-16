@@ -66,7 +66,9 @@ export default function IdeaCard({ idea, onClick, onVote, onPromote, isDragging 
         ref={setNodeRef}
         style={{
           background: '#1A1A28',
-          border: `1px solid ${hovered || isDragging ? stage.color : '#2A2A3E'}`,
+          borderTop: `1px solid ${hovered || isDragging ? stage.color : '#2A2A3E'}`,
+          borderRight: `1px solid ${hovered || isDragging ? stage.color : '#2A2A3E'}`,
+          borderBottom: `1px solid ${hovered || isDragging ? stage.color : '#2A2A3E'}`,
           borderLeft: `3px solid ${stage.color}`,
           borderRadius: 6,
           padding: 16,

@@ -73,8 +73,10 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
         style={{
           position: 'relative',
           background: '#111118',
-          border: cardHovered ? `1px solid ${cyberTool.border}` : '1px solid #3B4B3D',
           borderTop: `3px solid ${cyberTool.color}`,
+          borderRight: cardHovered ? `1px solid ${cyberTool.border}` : '1px solid #3B4B3D',
+          borderBottom: cardHovered ? `1px solid ${cyberTool.border}` : '1px solid #3B4B3D',
+          borderLeft: cardHovered ? `1px solid ${cyberTool.border}` : '1px solid #3B4B3D',
           borderRadius: 6,
           overflow: 'hidden',
           transform: cardHovered ? 'translateY(-1px)' : 'none',
@@ -372,8 +374,10 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
       className="group"
       style={{
         position: 'relative',
-        border: '1px solid #E2E8F0',
         borderTop: `3px solid ${tool.color}`,
+        borderRight: '1px solid #E2E8F0',
+        borderBottom: '1px solid #E2E8F0',
+        borderLeft: '1px solid #E2E8F0',
         background: '#FFFFFF',
         overflow: 'hidden',
         transition: 'border-color 150ms ease, transform 150ms ease',
@@ -381,14 +385,18 @@ export default function PromptCard({ prompt, onCopy, onUseInSession }: PromptCar
         breakInside: 'avoid',
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = '#2563EB';
-        (e.currentTarget as HTMLDivElement).style.borderTopColor = tool.color;
-        e.currentTarget.style.transform = 'translateY(-1px)';
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderRightColor = '#2563EB';
+        el.style.borderBottomColor = '#2563EB';
+        el.style.borderLeftColor = '#2563EB';
+        el.style.transform = 'translateY(-1px)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = '#E2E8F0';
-        (e.currentTarget as HTMLDivElement).style.borderTopColor = tool.color;
-        e.currentTarget.style.transform = 'none';
+        const el = e.currentTarget as HTMLDivElement;
+        el.style.borderRightColor = '#E2E8F0';
+        el.style.borderBottomColor = '#E2E8F0';
+        el.style.borderLeftColor = '#E2E8F0';
+        el.style.transform = 'none';
       }}
     >
       {/* ── HEADER ── */}

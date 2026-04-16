@@ -1,6 +1,19 @@
 import { NextRequest } from 'next/server';
 
+const MOCK_ESTIMATE = {
+  size: 'M',
+  confidence: 'MEDIUM',
+  rationale: 'No API key configured. This is a placeholder estimate. Add ANTHROPIC_API_KEY to your environment to enable real AI estimation.',
+  factors: ['Feature scope appears medium complexity', 'Requires API key to estimate accurately', 'Configure ANTHROPIC_API_KEY in .env.local'],
+  assumptions: 'Mock response — set ANTHROPIC_API_KEY for real estimates.',
+};
+
 export async function POST(req: NextRequest) {
+  // Return mock when no API key is available
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return Response.json(MOCK_ESTIMATE);
+  }
+
   try {
     const { title, problemStatement } = await req.json();
 
