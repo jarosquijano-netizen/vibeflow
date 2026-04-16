@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { XPProvider } from "@/lib/xp-engine";
@@ -35,8 +36,11 @@ export default function RootLayout({
       className="h-full antialiased"
     >
       <head>
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
-        <script dangerouslySetInnerHTML={{ __html: antiFlashScript }} />
+        <Script
+          id="anti-flash-theme"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: antiFlashScript }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <XPProvider>
